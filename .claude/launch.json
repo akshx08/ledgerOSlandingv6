@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "ledgeros-final", "runtimeExecutable": "npm", "runtimeArgs": ["run","dev","--","--port","3350"], "port": 3350 }
+  ]
+}

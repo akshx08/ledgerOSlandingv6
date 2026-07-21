@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * LEDGEROS — "APERTURE"
+ *
+ * Colour strategy: COMMITTED. A cool porcelain ground carries the calm; a
+ * single electric vermilion carries 30-60% of the surface across the drench
+ * bands, the access page, and every signal element. Ink is a blue-black, not
+ * a grey. Nothing here is warm-neutral: the ground is tinted toward violet,
+ * never toward cream.
+ *
+ * Channel triplets so Tailwind can compose alpha via oklch(var(--x) / a).
+ */
+:root {
+  --porcelain: 0.966 0.006 286; /* ground */
+  --paper: 0.995 0.003 286; /* raised */
+  --ink: 0.17 0.019 286; /* type + dark surfaces */
+  --graphite: 0.455 0.016 286; /* muted type — ~7:1 on porcelain */
+  /* The signal. Pinned at L 0.53 because that is the one lightness where the
+     colour clears 4.5:1 in BOTH directions — porcelain type on the drench,
+     and the accent itself as small type on porcelain (5.3:1 each way). A
+     brighter orange looked more electric and failed both. */
+  --vermilion: 0.53 0.205 30;
+  --edge: 0.878 0.007 286; /* hairlines */
+}
+
+html {
+  /* clips horizontal overflow without becoming a scroll container —
+     a scrollport between a fixed stage and the viewport breaks it */
+  overflow-x: clip;
+  background: oklch(var(--porcelain));
+}
+
+body {
+  background: oklch(var(--porcelain));
+  color: oklch(var(--ink));
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: oklch(var(--vermilion));
+  color: oklch(var(--porcelain));
+}
+
+/*
+ * Type. One family, committed contrast: Archivo variable driven across BOTH
+ * axes. Display is set wide (wdth ~122) and heavy; body sits at normal width
+ * and regular. Width is the differentiator, not a second typeface.
+ */
+.wide {
+  font-variation-settings: "wdth" 122, "wght" 700;
+  letter-spacing: -0.035em;
+  line-height: 0.87;
+  text-wrap: balance;
+}
+
+.wide-thin {
+  font-variation-settings: "wdth" 118, "wght" 300;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+
+.narrow {
+  font-variation-settings: "wdth" 76, "wght" 600;
+  letter-spacing: 0.015em;
+}
+
+/* data readouts only — never as section grammar */
+.readout {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+.rule {
+  border-color: oklch(var(--edge));
+}
+
+:focus-visible {
+  outline: 2px solid oklch(var(--vermilion));
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+/* the instrument cursor replaces the pointer on fine-pointer devices only */
+@media (hover: hover) and (pointer: fine) {
+  html.instrument,
+  html.instrument * {
+    cursor: none !important;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0);
+  }
+}
+
+.hover-drift {
+  animation: drift 11s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hover-drift {
+    animation: none;
+  }
+}
