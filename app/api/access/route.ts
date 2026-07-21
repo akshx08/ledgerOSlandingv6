@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 
 /**
- * POST /api/waitlist — store a signup.
+ * POST /api/access — store a signup.
+ *
+ * The path is /api/access, matching the route it serves. Sibling builds put
+ * this handler at /api/waitlist, and a form posting to the other one fails as
+ * a 404 rather than as the designed 503-with-email-fallback — so if this file
+ * is ever merged with one of those, reconcile the path deliberately.
  *
  * Backed by Supabase REST when the deployment provides:
  *   SUPABASE_URL                  e.g. https://xyz.supabase.co
