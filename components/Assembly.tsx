@@ -1,37 +1,29 @@
 "use client";
 
 /**
- * Assembly — the signature.
+ * Assembly — the signature, in three acts.
  *
- * Shredded records tumble through a porcelain volume, and then, in ONE move,
- * they are the wordmark. There is no intermediate sorted state. v4's version
- * of this scene resolved into a filed archive wall first, and a wall of
- * near-aligned sheets reads as untidy at exactly the moment it is meant to
- * read as resolved — so the wall is gone and the word is the only order.
+ * ACT I — THE RESOLVE. Shredded records tumble through a porcelain volume,
+ * and then, in ONE move, they are the wordmark. Each fragment is trimmed to
+ * the glyph outline as it lands, so the union of the paper IS the typography:
+ * the exact edge of the type, every pixel of it still a piece of document.
  *
- * The constraint that survives from v4 is the one that matters: nothing fades
- * in and nothing fades out. Every fragment in the finished word was in the
- * opening chaos, moved. The product does not create records; it puts the ones
- * a business already has into an order, and an animation where documents
- * materialise would be describing a different, and untrue, product.
+ * ACT II — THE SHATTER. On the next scroll the word does not fade. It
+ * detonates: every fragment that built a letterform is thrown outward and
+ * un-sets back into paper as it flies — the trim releases, the grain and
+ * shading return — because what breaks apart is the record, not a picture
+ * of it. Nothing is created and nothing is destroyed, in both directions.
  *
- * THE CLOCK IS THE SCROLLBAR. The resolve is scrubbed, not played: the
- * visitor drives it, can stop halfway, and can run it backwards.
+ * ACT III — THE VAULT. Behind the debris, out of the porcelain fog, stands
+ * what was always faintly there: an industrial door the height of the frame,
+ * ink-black, ruled like the documents, carrying a great dial astride its
+ * seam. The dial turns while the debris is still in the air, the halves
+ * part, and the camera drives through the opening. The interior is pure
+ * porcelain — the same colour as the page — so passing the threshold IS
+ * arriving at the site. The hand-off is invisible by construction.
  *
- * GROUND
- * v4 lit this field additively against near-black. On porcelain that image
- * does not exist — a luminous sheet on a near-white ground is a nothing. So
- * the material is inverted: fragments are ink on paper, and the fog is
- * porcelain, so depth reads as fragments dissolving into the page rather than
- * into shadow.
- *
- * THE FINISH
- * The word arrives as SET TYPE, not as a texture in the shape of type. The
- * paper grain, the directional shading and the fog all belong to the chaos
- * and are scaled out as each fragment takes its place, so the letterforms
- * land flat and solid in the same ink the rest of the site sets its display
- * type in. One colour, no accent, no plate: the wordmark is the argument, and
- * anything decorating it is competing with it.
+ * THE CLOCK IS THE SCROLLBAR throughout. Every act is scrubbed, never
+ * played; the visitor can stop mid-detonation or back out of the vault.
  */
 
 import { useEffect, useRef } from "react";
@@ -45,22 +37,20 @@ import * as THREE from "three";
  * back. That transform is appended to the fragment shaders of three's OWN
  * materials; a ShaderMaterial that writes gl_FragColor itself never receives
  * it. The result is every colour emitting at roughly half its intended
- * lightness — which is why the wordmark once read as a black slab no matter
- * how light the ink was set.
- *
- * This scene is flat-shaded and its palette is authored as hex to match the
- * stylesheet, so the honest fix is to stay in one space end to end rather
- * than to hand-roll an encode in the shader and hope the two agree.
+ * lightness. The palette here is authored as hex to match the stylesheet, so
+ * the honest fix is to stay in one space end to end.
  */
 THREE.ColorManagement.enabled = false;
 
-/* Sampled from the stylesheet's own tokens rather than eyeballed, so the
- * canvas ground and the CSS ground are the same colour and the seam between
- * them is invisible:
+/* Sampled from the stylesheet's own tokens rather than eyeballed:
  *   --porcelain oklch(0.966 0.006 286) → #f3f3f8
- *   --ink       oklch(0.17  0.019 286) → #0f0e17   (the display type's black) */
+ *   --ink       oklch(0.17  0.019 286) → #0f0e17
+ *   --vermilion oklch(0.53  0.205 30)  → #c71a0c  */
 const PORCELAIN = 0xf3f3f8;
 const INK = 0x0f0e17;
+const VERMILION = 0xc71a0c;
+
+/* ------------------------------ fragments ------------------------------ */
 
 const VERT = /* glsl */ `
 precision highp float;
@@ -69,21 +59,24 @@ attribute vec3 aChaosPos;
 attribute vec3 aWordPos;
 attribute vec3 aChaosRot;
 attribute vec3 aWordRot;
+attribute vec3 aBurst;
 attribute vec2 aScale;
 attribute float aDelay;
 attribute float aTone;
 attribute float aRules;
 
 uniform float uProgress;
+uniform float uShatter;
 uniform float uTime;
 uniform float uReduced;
 uniform float uWordScale;
 uniform float uLoosen;
-uniform vec2  uWordSize;   // the wordmark plane in world units
+uniform vec2  uWordSize;
 
 varying vec2  vUv;
-varying vec2  vWordUv;     // where this pixel falls in the wordmark
+varying vec2  vWordUv;
 varying float vSettle;
+varying float vShatter;
 varying float vTone;
 varying float vFog;
 varying float vShade;
@@ -103,11 +96,17 @@ void main(){
   vRules = aRules;
 
   // Each fragment has its own window inside the global progress, so the word
-  // is written rather than switched on. A uniform arrival reads as one object
-  // animating; a staggered one reads as many things being placed.
+  // is written rather than switched on.
   float local = clamp((uProgress - aDelay * 0.40) / 0.60, 0.0, 1.0);
   float s = 1.0 - pow(1.0 - local, 3.0);
   vSettle = s;
+
+  // The detonation is nearly simultaneous — a stagger wide enough to read as
+  // a sequence would read as a dissolve, and the beat is a BREAK.
+  float sh = clamp((uShatter - aDelay * 0.12) / 0.88, 0.0, 1.0);
+  // ease-out: the violence is all in the first instant
+  float shD = 1.0 - pow(1.0 - sh, 2.2);
+  vShatter = sh;
 
   // drift while unstructured — the chaos is alive, not a frozen scatter
   vec3 drift = vec3(
@@ -121,43 +120,41 @@ void main(){
     sin(uTime * 0.55 + aDelay * 60.0),
     cos(uTime * 0.47 + aDelay * 40.0),
     0.0
-  ) * s * (0.03 + uLoosen * 0.35) * (1.0 - uReduced);
+  ) * s * (0.03 + uLoosen * 0.35) * (1.0 - uReduced) * (1.0 - sh);
 
   vec3 pos = mix(aChaosPos, aWordPos, s) + drift + breath;
 
+  // THE BURST. Directions are baked per fragment — outward from the word's
+  // centre with a strong bias toward the camera, so the debris does not just
+  // scatter, it comes PAST the viewer. Distance keys off tone so the field
+  // gets depth instead of a uniform shell.
+  pos += aBurst * shD * (16.0 + aTone * 30.0);
+
   vec3 spin = aChaosRot + vec3(uTime * 0.09) * (1.0 - uReduced);
   vec3 rot = mix(spin, aWordRot, s);
+  // it tumbles again as it flies — settled stillness has no business
+  // surviving a detonation
+  rot += aChaosRot * sh * 2.4 + vec3(uTime * 0.6, uTime * 0.5, uTime * 0.7) * sh * (1.0 - uReduced);
 
-  // THE PLACED PIECE DOES NOT KEEP THE TORN SHAPE.
-  //
-  // Chaos wants long ripped strips — that is what shredded paper is. But
-  // scaling those same strips down and laying them into letterforms gives
-  // thousands of thin slivers at slightly different angles, and that reads as
-  // hatching, or handwriting, or scribble. It does not read as type. The word
-  // is meant to arrive as a bold setting, so the placed piece resolves to a
-  // small, near-uniform tile whose union has a clean edge and a solid middle.
+  // Placed pieces are near-uniform tiles so the letterforms hold an edge;
+  // flying debris regains its torn-strip shape, because it is paper again.
   vec2 wordSc = vec2(uWordScale, uWordScale * 0.78) * (0.88 + aTone * 0.24);
-  vec2 sc = mix(aScale, wordSc, s);
+  vec2 sc = mix(mix(aScale, wordSc, s), aScale, sh * 0.85);
 
   mat3 R = rotate(rot);
   vec3 local3 = vec3(position.xy * sc, 0.0);
   vec3 world = R * local3 + pos;
 
-  // PAPER CATCHES LIGHT. A sheet with no shading is a coloured rectangle; a
-  // sheet whose face brightens as it turns through a key light is paper. One
-  // fixed directional term is enough, and it costs a dot product.
+  // PAPER CATCHES LIGHT — one fixed directional term, one dot product.
   vec3 N = normalize(R * vec3(0.0, 0.0, 1.0));
   vec3 L = normalize(vec3(-0.35, 0.78, 0.52));
   float ndl = dot(N, L);
   float facing = step(0.0, ndl);
-  // the back of a sheet is not black, it is the same paper in less light
   vShade = mix(0.58, 1.0, abs(ndl)) * mix(0.82, 1.0, facing);
 
   // Where this pixel falls inside the wordmark, in the SAME space the sample
-  // points were drawn from. Taken from the interpolated world position rather
-  // than from the instance's target, so it varies across the face of each
-  // tile — which is what lets the fragment shader cut the tile along the
-  // glyph edge instead of merely keeping or dropping it whole.
+  // points were drawn from — this is what lets the fragment shader cut the
+  // tile along the glyph edge instead of keeping or dropping it whole.
   vWordUv = vec2(world.x / uWordSize.x + 0.5, 0.5 - world.y / uWordSize.y);
 
   vec4 mv = modelViewMatrix * vec4(world, 1.0);
@@ -172,11 +169,12 @@ precision highp float;
 uniform vec3      uPorcelain;
 uniform vec3      uInk;
 uniform float     uFogDensity;
-uniform sampler2D uWordTex;   // the wordmark's own coverage, as a stencil
+uniform sampler2D uWordTex;
 
 varying vec2  vUv;
 varying vec2  vWordUv;
 varying float vSettle;
+varying float vShatter;
 varying float vTone;
 varying float vFog;
 varying float vShade;
@@ -185,63 +183,140 @@ varying float vRules;
 void main(){
   vec2 p = abs(vUv - 0.5) * 2.0;
 
-  // the sheet is CUT, not faded: paper has an edge, and an opaque sheet lets
-  // the stack occlude itself the way paper actually does
+  // the sheet is CUT, not faded: paper has an edge
   float border = smoothstep(0.98, 0.9, max(p.x, p.y));
   if (border < 0.5) discard;
 
-  // THE PAPER IS TRIMMED TO THE LETTERFORM.
-  //
-  // A tile is sampled from a point inside a glyph, but the tile itself is a
-  // rectangle and overhangs the glyph's edge. Thousands of overhangs are what
-  // furred the wordmark, and no tile count fixes it — the union of rectangles
-  // simply is not a letterform.
-  //
-  // So as a fragment lands it gets CUT against the wordmark's own coverage.
-  // The union then has the exact edge of the type, while every pixel inside
-  // it is still a piece of document. The word is made of the paper rather
-  // than printed over it.
-  //
-  // Per-fragment, driven by that fragment's own settle: a scrap in flight is
-  // whole, and is trimmed only as it takes its place.
+  // THE PAPER IS TRIMMED TO THE LETTERFORM as it lands — and RELEASED as it
+  // shatters. The trim is what gives the word the exact edge of the type;
+  // its release is what turns the letterforms back into whole scraps the
+  // instant they break away. The same mechanism, run in both directions.
   float cover = texture2D(uWordTex, vWordUv).a;
-  float trim  = smoothstep(0.45, 0.98, vSettle);
-  // soft across roughly one texel of the 3600px stencil, so the cut edge is
-  // resolved by coverage rather than by a hard alpha test
+  float trim  = smoothstep(0.45, 0.98, vSettle) * (1.0 - vShatter);
   float inside = smoothstep(0.42, 0.58, cover);
   float keep = mix(1.0, inside, trim);
   if (keep < 0.02) discard;
 
-  // Fragments carry ruled lines, not a texture: a document reads as a
-  // document because of the horizontal rhythm of type on it. The count varies
-  // per sheet, so a shredded pile does not repeat one printed page.
+  // ruled lines — a document reads as a document because of the horizontal
+  // rhythm of type on it
   float rule = smoothstep(0.07, 0.0, abs(fract(vUv.y * vRules) - 0.5) - 0.33);
   float head = smoothstep(0.055, 0.0, abs(vUv.y - 0.82) - 0.02);
   float body = 0.86 + rule * 0.14 + head * 0.14;
 
-  // EVERY TEXTURE CUE BELONGS TO THE CHAOS.
-  //
-  // Grain, tone variance, directional shading and fog are what make a
-  // tumbling scrap read as paper. All four also multiply, and carried into
-  // the settled state they drag the wordmark off full ink and leave it a
-  // washed grey with a furred surface. They are scaled out by settle, so the
-  // fragment is paper on the way in and set type once it lands.
+  // Texture cues belong to loose paper: scaled out as a fragment sets into
+  // the word, and brought BACK as it shatters out of it.
+  float settleEff = vSettle * (1.0 - vShatter * 0.85);
   float fog = 1.0 - exp(-uFogDensity * uFogDensity * vFog * vFog);
   float paper = body * (0.82 + vTone * 0.18) * vShade * (1.0 - clamp(fog, 0.0, 1.0));
-  float surface = mix(paper, 1.0, vSettle * 0.88);
+  float surface = mix(paper, 1.0, settleEff * 0.88);
 
-  float density = (0.30 + vSettle * 0.70) * surface;
+  float density = (0.30 + settleEff * 0.70) * surface;
 
-  // alphaToCoverage turns this into MSAA coverage, so the trimmed edge is
-  // antialiased while the material stays opaque and keeps occluding properly
   gl_FragColor = vec4(mix(uPorcelain, uInk, clamp(density, 0.0, 1.0)), keep);
+}
+`;
+
+/* -------------------------------- doors -------------------------------- */
+
+const DOOR_VERT = /* glsl */ `
+precision highp float;
+
+varying vec3  vL;
+varying vec3  vN;
+varying float vFogD;
+
+void main(){
+  vL = position;
+  vN = normal;
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  vFogD = -mv.z;
+  gl_Position = projectionMatrix * mv;
+}
+`;
+
+const DOOR_FRAG = /* glsl */ `
+precision highp float;
+
+uniform vec3  uPorcelain;
+uniform vec3  uInk;
+uniform vec3  uVermilion;
+uniform float uFogDensity;
+uniform float uDial;    // the unlock, in radians
+uniform float uSide;    // +1 left door, -1 right — the inner edge
+uniform vec2  uHalf;    // half-extents of the door face
+uniform float uReveal;  // the vault exists only once the word has broken
+
+varying vec3  vL;
+varying vec3  vN;
+varying float vFogD;
+
+void main(){
+  // ink slab under one fixed light — the same light the paper catches
+  vec3 L = normalize(vec3(-0.35, 0.78, 0.52));
+  float nl = dot(normalize(vN), L);
+  vec3 col = uInk * (0.82 + 0.34 * max(nl, 0.0));
+
+  // engraved horizontal panel lines: the door is ruled like the documents,
+  // because the vault and the records are the same institution
+  float band = abs(fract(vL.y / 4.2 + 0.5) - 0.5) * 4.2;
+  float groove = smoothstep(0.16, 0.04, band - 1.92);
+  col = mix(col, uPorcelain, groove * 0.08);
+
+  // hairline border on the face
+  vec2 b = uHalf - abs(vL.xy);
+  float rim = smoothstep(0.34, 0.12, min(b.x, b.y));
+  col = mix(col, uPorcelain, rim * 0.14);
+
+  // THE DIAL. One great wheel astride the seam — half on each door — that
+  // turns as the debris is still in the air. Drawn in door-local space so it
+  // travels with its half when the doors part.
+  vec2 c = vec2(uSide * uHalf.x, 0.0);
+  vec2 d = vL.xy - c;
+  float r = length(d);
+  float ringO = smoothstep(0.30, 0.12, abs(r - 9.4));
+  float ringI = smoothstep(0.22, 0.09, abs(r - 6.2));
+  float ang = atan(d.y, d.x) + uDial;
+  float spokeF = abs(fract(ang / 0.5236 + 0.5) - 0.5) * 0.5236 * r;
+  float spoke = smoothstep(0.30, 0.10, spokeF) * step(2.2, r) * (1.0 - step(9.3, r));
+  float hub = smoothstep(0.24, 0.10, abs(r - 2.0));
+  col = mix(col, uPorcelain, (ringO * 0.55 + ringI * 0.4 + spoke * 0.32 + hub * 0.5));
+
+  // bolt heads on a fixed ring — the frame does not rotate with the wheel
+  float angF = atan(d.y, d.x);
+  float bStep = 0.5236;
+  float bAng = (floor(angF / bStep) + 0.5) * bStep;
+  float bd = length(d - vec2(cos(bAng), sin(bAng)) * 12.6);
+  float bolt = smoothstep(0.58, 0.34, bd);
+  col = mix(col, uPorcelain, bolt * 0.30);
+
+  // the inner edge carries the signal: a vermilion seam, the one line of
+  // colour on the whole door
+  float edge = smoothstep(0.5, 0.14, abs(vL.x - uSide * uHalf.x));
+  col = mix(col, uVermilion, edge);
+
+  // the same porcelain fog the paper lives in — the door RESOLVES out of the
+  // distance as the camera drives at it, no pop-in anywhere
+  float f = 1.0 - exp(-uFogDensity * uFogDensity * vFogD * vFogD);
+  col = mix(col, uPorcelain, clamp(f, 0.0, 1.0));
+
+  // THE REVEAL. While the word stands, the vault does not exist — the frame
+  // belongs to the porcelain and the type. Fog cannot hide a wall this size
+  // at this distance, so its presence is gated outright: the detonation is
+  // what discloses that the word was standing in front of a door all along.
+  col = mix(uPorcelain, col, uReveal);
+
+  gl_FragColor = vec4(col, 1.0);
 }
 `;
 
 type Props = {
   /** 0 → 1 assembly, scrubbed by scroll. */
   assembleRef: React.RefObject<number>;
-  /** 0 → 1 continued scroll after the word has landed. */
+  /** 0 → 1 detonation of the settled word. */
+  shatterRef: React.RefObject<number>;
+  /** 0 → 1 unlock, part, and push through the doors. */
+  vaultRef: React.RefObject<number>;
+  /** 0 → 1 continued scroll, for the breathing. */
   scrollRef: React.RefObject<number>;
   className?: string;
 };
@@ -252,15 +327,25 @@ const WORD = "LedgerOS";
 const WORD_W = 24;
 const FOV = 42;
 const HALF_FOV = (FOV / 2) * (Math.PI / 180);
-/** fraction of the frame's width the word should occupy at rest */
 const FIT_LANDSCAPE = 0.68;
 const FIT_PORTRAIT = 0.86;
-/** How far below the frame's centre the word settles, as a fraction of the
- *  visible height. Portrait gets far less: the offset scales with the visible
- *  height, and on a tall frame the same fraction drops the word onto the rule
- *  above the body copy. */
+/** word drop below frame centre, as a fraction of visible height */
 const DROP_LANDSCAPE = 0.09;
 const DROP_PORTRAIT = 0.025;
+
+/** the vault stands well behind the word, deep enough into the porcelain fog
+ *  to be only a presence until the camera drives at it. Sized past the
+ *  frustum at its first appearance — a vault door with porcelain sky at its
+ *  corners is a prop, not a wall. */
+const DOOR_Z = -34;
+const DOOR_W = 46;
+const DOOR_H = 64;
+const DOOR_T = 4;
+/** the resting seam gap — a vermilion hairline of interior light */
+const SEAM = 0.4;
+
+const easeInOut = (t: number) =>
+  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 /** deterministic, so SSR/CSR and every reload agree */
 function rng(seed: number) {
@@ -272,31 +357,13 @@ function rng(seed: number) {
 }
 
 /**
- * Rasterise the wordmark and sample points inside its glyphs.
+ * Draw the wordmark with one fit rule at any resolution. Both the point
+ * sampler and the trim stencil go through here, so they describe the same
+ * geometry and the trim lines up by construction.
  *
- * Set to match `.wide` exactly — the class the site's display type uses, and
- * the one on the closing "Seats are few." — so the wordmark is the same
- * setting the page ends on rather than a near-miss of it:
- *   wght 700 · wdth 122 · letter-spacing -0.035em
- *
- * THE FAMILY NAME MATTERS. next/font emits a scoped family
- * (`__Archivo_afd4a3`), so `ctx.font = "700 300px Archivo"` silently matches
- * nothing and rasterises in the browser's default sans — which is how an
- * earlier build ended up with a wordmark in the wrong typeface entirely. The
- * real name is read off the live headline. Canvas cannot take
- * font-variation-settings, but `expanded` in the shorthand is what reaches
- * Archivo's width axis.
- */
-/**
- * Draw the wordmark into an offscreen canvas of the given size, always with
- * the same relative layout: fitted to 94% of the width and centred. Both the
- * point sampler and the set-type texture go through here, so they describe
- * the same geometry at different resolutions and land on top of each other
- * exactly — alignment is a property of the construction rather than
- * something to nudge into place afterwards.
- *
- * `fill: null` leaves the background transparent, which is what the texture
- * wants; the sampler only reads alpha, so it does not care.
+ * `expanded` is the only way to reach Archivo's width axis from canvas —
+ * percentages are silently rejected (the assignment fails and the context
+ * keeps its previous font, which looks exactly like it worked).
  */
 function renderWordCanvas(
   text: string,
@@ -320,10 +387,6 @@ function renderWordCanvas(
     /* pre-2023 engines simply set the word slightly loose */
   }
 
-  // NOTE: `expanded` is the only way to reach the width axis from canvas —
-  // it maps to wdth 125 against the stylesheet's 122. Percentages are NOT
-  // accepted here: the assignment fails silently and the context keeps
-  // whatever font it had, which looks exactly like it worked.
   const spec = (px: number) => `700 expanded ${px}px "${family}"`;
 
   let size = Math.round(W / 6);
@@ -338,7 +401,6 @@ function renderWordCanvas(
   return { canvas, ctx };
 }
 
-/** the raster the point sampler reads; also fixes the plane's aspect */
 const RASTER_W = 1800;
 const RASTER_H = 460;
 
@@ -364,20 +426,14 @@ function sampleWord(
   const n = hits.length / 2;
   if (n < 64) return null;
 
-  // World framing. The word is built WORD_W units wide and centred on the
-  // origin; where it sits in frame is the camera's job, not the geometry's,
-  // so the composition holds at any aspect instead of only at the one it was
-  // authored on.
   const unit = WORD_W / W;
   const out = new Float32Array(count * 3);
   for (let i = 0; i < count; i += 1) {
     const h = Math.floor(rand() * n) * 2;
-    // jitter inside the sampled pixel so the fill is not a visible lattice
     const x = hits[h] + rand() - 0.5;
     const y = hits[h + 1] + rand() - 0.5;
     out[i * 3 + 0] = (x - W / 2) * unit;
     out[i * 3 + 1] = -(y - H / 2) * unit;
-    // a thin slab, so the word has a body and the ranks parallax slightly
     out[i * 3 + 2] = (rand() - 0.5) * 1.1;
   }
   return out;
@@ -385,6 +441,8 @@ function sampleWord(
 
 export default function Assembly({
   assembleRef,
+  shatterRef,
+  vaultRef,
   scrollRef,
   className = "",
 }: Props) {
@@ -398,9 +456,8 @@ export default function Assembly({
     let teardown: (() => void) | null = null;
 
     const boot = async () => {
-      // Resolve the real, scoped family off a live element that carries the
-      // display class, then wait for it — bounded, so a slow font cannot hold
-      // the opening hostage.
+      // Resolve the real, scoped family off a live element carrying the
+      // display class — next/font's plain name matches nothing in canvas.
       const probe = document.createElement("span");
       probe.className = "wide";
       probe.style.cssText =
@@ -430,10 +487,11 @@ export default function Assembly({
       const reduced = window.matchMedia(
         "(prefers-reduced-motion: reduce)"
       ).matches;
-      // `?assemble=` must show the state it names, exactly. Easing toward it
-      // makes the tuning surface lie — most visibly in a pane where rAF is
-      // paused and the eased value never arrives at all.
-      const pinned = new URLSearchParams(window.location.search).has("assemble");
+      // `?assemble=` / `?shatter=` / `?vault=` must show the state they name,
+      // exactly — easing toward a pin makes the tuning surface lie.
+      const q = new URLSearchParams(window.location.search);
+      const pinned =
+        q.has("assemble") || q.has("shatter") || q.has("vault");
       const small = window.innerWidth < 900;
       const count = reduced ? 2400 : small ? 4200 : COUNT;
 
@@ -446,8 +504,6 @@ export default function Assembly({
         alpha: false,
       });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-      // matches the ColorManagement decision above: no output transform, so
-      // what the shader writes is what the display gets
       renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
       renderer.setClearColor(PORCELAIN, 1);
       host.appendChild(renderer.domElement);
@@ -467,15 +523,13 @@ export default function Assembly({
       const chaosPos = new Float32Array(count * 3);
       const chaosRot = new Float32Array(count * 3);
       const wordRot = new Float32Array(count * 3);
+      const burst = new Float32Array(count * 3);
       const scale = new Float32Array(count * 2);
       const delay = new Float32Array(count);
       const tone = new Float32Array(count);
       const rules = new Float32Array(count);
 
       for (let i = 0; i < count; i += 1) {
-        // chaos: a wide, deep, unstructured volume that the camera starts
-        // inside, so the opening is "in the middle of it" rather than
-        // "looking at it"
         const a = rand() * Math.PI * 2;
         const r = 12 + Math.pow(rand(), 0.55) * 30;
         chaosPos[i * 3 + 0] = Math.cos(a) * r * 1.2;
@@ -486,23 +540,31 @@ export default function Assembly({
         chaosRot[i * 3 + 1] = rand() * Math.PI * 2;
         chaosRot[i * 3 + 2] = rand() * Math.PI * 2;
 
-        // Placed: square to the reader. The residual jitter is a fifth of
-        // what it once was — at ±4° every tile fought its neighbours and the
-        // letterform edges came out furred, which is most of what made the
-        // wordmark read as a texture rather than as set type.
         wordRot[i * 3 + 0] = (rand() - 0.5) * 0.012;
         wordRot[i * 3 + 1] = (rand() - 0.5) * 0.012;
         wordRot[i * 3 + 2] = (rand() - 0.5) * 0.014;
 
-        // A shredded pile is not one repeated sheet. Most fragments are torn
-        // strips — long and thin — with a minority of squarer pieces.
+        // THE BURST DIRECTION: radial from the word's centre, with a strong
+        // bias toward the camera so the debris comes past the viewer rather
+        // than merely scattering in plane. Baked, like everything else.
+        const ba = rand() * Math.PI * 2;
+        let bx = Math.cos(ba) * (0.5 + rand() * 0.5);
+        let by = Math.sin(ba) * (0.5 + rand() * 0.5);
+        bx += wordPos[i * 3 + 0] / 16;
+        by += wordPos[i * 3 + 1] / 7;
+        const bz = rand() * 1.5 - 0.25;
+        const bl = Math.hypot(bx, by, bz) || 1;
+        burst[i * 3 + 0] = bx / bl;
+        burst[i * 3 + 1] = by / bl;
+        burst[i * 3 + 2] = bz / bl;
+
         const strip = rand();
         const w = 0.8 + rand() * 0.4;
         scale[i * 2 + 0] = w;
         scale[i * 2 + 1] =
           strip < 0.62
-            ? w * (0.16 + rand() * 0.14) // torn strip
-            : w * (0.42 + rand() * 0.3); // a squarer piece
+            ? w * (0.16 + rand() * 0.14)
+            : w * (0.42 + rand() * 0.3);
 
         delay[i] = rand();
         tone[i] = 0.55 + rand() * 0.45;
@@ -515,19 +577,15 @@ export default function Assembly({
       geo.setAttribute("aWordPos", inst(wordPos, 3));
       geo.setAttribute("aChaosRot", inst(chaosRot, 3));
       geo.setAttribute("aWordRot", inst(wordRot, 3));
+      geo.setAttribute("aBurst", inst(burst, 3));
       geo.setAttribute("aScale", inst(scale, 2));
       geo.setAttribute("aDelay", inst(delay, 1));
       geo.setAttribute("aTone", inst(tone, 1));
       geo.setAttribute("aRules", inst(rules, 1));
       geo.instanceCount = count;
-      // instances are placed entirely in the vertex shader, so three's own
-      // culling would discard the whole field on the origin
-      geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 90);
+      geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 120);
 
-      /* The stencil: the same wordmark the points were sampled from, at 2x,
-       * used purely as coverage. Because it comes out of renderWordCanvas
-       * with the same fit rule as the sampler, its UV space and the sample
-       * space are the same space — the trim lines up by construction. */
+      /* the trim stencil — same fit rule as the sampler, at 2x */
       const stencil = renderWordCanvas(
         WORD,
         family,
@@ -535,21 +593,15 @@ export default function Assembly({
         RASTER_H * 2,
         "#000"
       );
-      const wordTex = stencil
-        ? new THREE.CanvasTexture(stencil.canvas)
-        : null;
+      const wordTex = stencil ? new THREE.CanvasTexture(stencil.canvas) : null;
       if (wordTex) {
         wordTex.colorSpace = THREE.NoColorSpace;
-        // The vertex shader derives v from world Y directly (v=0 at the top
-        // of the word), so the texture must NOT also flip. Leaving three's
-        // default flipY on samples the glyphs upside down, which renders as
-        // convincing-looking but mirrored letterforms.
+        // v is derived from world Y in the vertex shader (v=0 at the top),
+        // so the texture must NOT also flip — flipY renders mirrored glyphs.
         wordTex.flipY = false;
         wordTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
         wordTex.minFilter = THREE.LinearMipmapLinearFilter;
         wordTex.magFilter = THREE.LinearFilter;
-        // the stencil is sampled far outside 0..1 by tiles that have not
-        // landed yet; clamping keeps those reading as "outside the glyph"
         wordTex.wrapS = THREE.ClampToEdgeWrapping;
         wordTex.wrapT = THREE.ClampToEdgeWrapping;
         wordTex.needsUpdate = true;
@@ -560,6 +612,7 @@ export default function Assembly({
         fragmentShader: FRAG,
         uniforms: {
           uProgress: { value: 0 },
+          uShatter: { value: 0 },
           uTime: { value: 0 },
           uReduced: { value: reduced ? 1 : 0 },
           uWordScale: { value: 0.34 },
@@ -569,10 +622,7 @@ export default function Assembly({
           uFogDensity: { value: 0.019 },
           uWordTex: { value: wordTex },
           uWordSize: {
-            value: new THREE.Vector2(
-              WORD_W,
-              (RASTER_H / RASTER_W) * WORD_W
-            ),
+            value: new THREE.Vector2(WORD_W, (RASTER_H / RASTER_W) * WORD_W),
           },
         },
         transparent: false,
@@ -580,8 +630,6 @@ export default function Assembly({
         depthTest: true,
         side: THREE.DoubleSide,
         blending: THREE.NormalBlending,
-        // resolves the trimmed edge through MSAA samples instead of a hard
-        // alpha test, without giving up depth-sorted opacity
         alphaToCoverage: true,
       });
 
@@ -589,6 +637,35 @@ export default function Assembly({
       mesh.frustumCulled = false;
       scene.add(mesh);
 
+      /* ---------- the vault ---------- */
+      const doorGeo = new THREE.BoxGeometry(DOOR_W, DOOR_H, DOOR_T);
+      const mkDoor = (side: 1 | -1) =>
+        new THREE.ShaderMaterial({
+          vertexShader: DOOR_VERT,
+          fragmentShader: DOOR_FRAG,
+          uniforms: {
+            uPorcelain: { value: new THREE.Color(PORCELAIN) },
+            uInk: { value: new THREE.Color(INK) },
+            uVermilion: { value: new THREE.Color(VERMILION) },
+            // Lighter than the paper's fog. Concealment is uReveal's job now;
+            // this only has to sell distance, and at 0.024 the whole drive-in
+            // happened behind a veil — the dial never earned its contrast
+            // until the camera was practically against it.
+            uFogDensity: { value: 0.016 },
+            uDial: { value: 0 },
+            uSide: { value: side },
+            uHalf: { value: new THREE.Vector2(DOOR_W / 2, DOOR_H / 2) },
+            uReveal: { value: 0 },
+          },
+        });
+
+      const doorMatL = mkDoor(1);
+      const doorMatR = mkDoor(-1);
+      const doorL = new THREE.Mesh(doorGeo, doorMatL);
+      const doorR = new THREE.Mesh(doorGeo, doorMatR);
+      doorL.position.set(-(DOOR_W / 2 + SEAM / 2), 0, DOOR_Z);
+      doorR.position.set(DOOR_W / 2 + SEAM / 2, 0, DOOR_Z);
+      scene.add(doorL, doorR);
 
       /* ---------- resize ---------- */
       let portrait = false;
@@ -636,46 +713,85 @@ export default function Assembly({
         const t = now / 1000;
 
         const target = THREE.MathUtils.clamp(assembleRef.current ?? 0, 0, 1);
-        // A stalled tab must snap, never crawl the whole assembly. Reduced
-        // motion snaps too: the sort itself is content and stays scroll-
-        // linked, but the smoothing that trails the scroll is decoration.
         if (pinned || rawDt > 0.25 || reduced) eased = target;
         else eased += (target - eased) * Math.min(1, dt * 4.0);
         const p = eased;
+        const sh = THREE.MathUtils.clamp(shatterRef.current ?? 0, 0, 1);
+        const va = THREE.MathUtils.clamp(vaultRef.current ?? 0, 0, 1);
         const sp = THREE.MathUtils.clamp(scrollRef.current ?? 0, 0, 1);
 
         mat.uniforms.uProgress.value = p;
+        mat.uniforms.uShatter.value = sh;
         mat.uniforms.uTime.value = t;
         mat.uniforms.uLoosen.value = sp;
+
+        // the unlock: the dial spins through the detonation and keeps
+        // turning as the doors part
+        const dial = sh * 1.9 + va * 2.6;
+        doorMatL.uniforms.uDial.value = dial;
+        doorMatR.uniforms.uDial.value = dial;
+
+        // the detonation discloses the vault; by the time the doors are
+        // parting it is fully material
+        const reveal = THREE.MathUtils.clamp(sh * 1.1 + va * 0.5, 0, 1);
+        doorMatL.uniforms.uReveal.value = reveal;
+        doorMatR.uniforms.uReveal.value = reveal;
+
+        // The doors part on the tail of the vault phase — the dial gets the
+        // head, so the sequence reads unlock THEN open. The travel is tuned
+        // against the camera's own advance: part too early or too far and
+        // the slabs leave the frustum while the camera is still metres out,
+        // and the drive-through happens into empty porcelain instead of
+        // through a doorway.
+        const open = easeInOut(
+          THREE.MathUtils.clamp((va - 0.35) / 0.65, 0, 1)
+        );
+        const slide = SEAM / 2 + DOOR_W / 2 + open * DOOR_W * 0.62;
+        doorL.position.x = -slide;
+        doorR.position.x = slide;
 
         ptr.x += (ptr.tx - ptr.x) * 0.05;
         ptr.y += (ptr.ty - ptr.y) * 0.05;
 
-        // THE CAMERA IS THE NARRATOR. It begins inside the debris and comes
-        // to rest square-on to the word. One move, never cut.
-        //
-        // The resting distance is SOLVED from the aspect rather than typed
-        // in. A fixed dolly frames the word correctly on the one viewport it
-        // was authored against and lets it run off both edges on a phone.
+        // THE CAMERA IS THE NARRATOR. It rests square-on to the word, takes
+        // one hard knock as the word detonates, and then DRIVES — through
+        // the debris field, at the doors, and through the opening into
+        // porcelain light. One continuous move, never cut.
         const e = 1 - Math.pow(1 - p, 2.1);
         const fit = portrait ? FIT_PORTRAIT : FIT_LANDSCAPE;
         const restD =
           WORD_W / (fit * 2 * Math.tan(HALF_FOV) * Math.max(camera.aspect, 0.3));
         const startD = restD * 1.5;
-        const dolly = startD + (restD - startD) * e;
+        const baseD = startD + (restD - startD) * e;
+
+        const vaultE = easeInOut(va);
+        const throughZ = DOOR_Z - 12;
+        // the shatter itself shoves the camera forward a little — impact
+        const camZ =
+          (baseD - sh * restD * 0.14) * (1 - vaultE) + throughZ * vaultE;
+
+        // the knock: a decaying shake that peaks just after detonation.
+        // Decoration, so reduced motion drops it entirely.
+        const knock = reduced ? 0 : Math.sin(sh * Math.PI) * (1 - va) * 0.5;
+        const shakeX = Math.sin(t * 47.0) * knock * 0.4;
+        const shakeY = Math.cos(t * 61.0) * knock * 0.3;
 
         camera.position.set(
-          ptr.x * (2.6 - e * 2.0),
-          (1 - e) * 5.0 - ptr.y * (2.2 - e * 1.6),
-          dolly
+          ptr.x * (2.6 - e * 2.0) * (1 - vaultE) + shakeX,
+          (1 - e) * 5.0 - ptr.y * (2.2 - e * 1.6) * (1 - vaultE) + shakeY,
+          camZ
         );
 
-        // Looking ABOVE the word drops it into the lower part of the frame,
-        // clear of the display headline. Expressed against the visible height
-        // so the gap is the same shape on every screen.
-        const visH = 2 * dolly * Math.tan(HALF_FOV);
+        const visH = 2 * Math.max(camZ - DOOR_Z, 4) * Math.tan(HALF_FOV);
         const drop = portrait ? DROP_PORTRAIT : DROP_LANDSCAPE;
-        camera.lookAt(0, (1 - e) * 1.4 + e * visH * drop, 0);
+        const restLookY = (1 - e) * 1.4 + e * visH * drop;
+        // through the vault phase the camera stops looking AT the word's
+        // position and looks AHEAD, or the view would flip as it passes it
+        camera.lookAt(
+          camera.position.x * 0.2 * vaultE,
+          restLookY * (1 - vaultE),
+          vaultE * (camZ - 24)
+        );
 
         renderer.render(scene, camera);
       };
@@ -690,6 +806,9 @@ export default function Assembly({
         plane.dispose();
         geo.dispose();
         mat.dispose();
+        doorGeo.dispose();
+        doorMatL.dispose();
+        doorMatR.dispose();
         wordTex?.dispose();
         renderer.dispose();
         renderer.domElement.remove();
@@ -700,17 +819,15 @@ export default function Assembly({
 
     return () => {
       disposed = true;
-      // React StrictMode double-invokes effects; disposing GPU state the
-      // remounted component still holds is a black canvas with no error.
-      // Deferring one cancellable tick lets the remount win.
+      // StrictMode double-invokes effects; disposing GPU state the remounted
+      // component still holds is a black canvas with no error. Deferring one
+      // cancellable tick lets the remount win.
       setTimeout(() => teardown?.(), 0);
     };
-  }, [assembleRef, scrollRef]);
+  }, [assembleRef, shatterRef, vaultRef, scrollRef]);
 
   return (
-    // absolute, not fixed: this lives inside the Stage's fixed host, and a
-    // second fixed layer inside a transformed parent is positioned against
-    // the parent anyway.
+    // absolute, not fixed: this lives inside the Stage's fixed host
     <div
       ref={hostRef}
       className={`pointer-events-none absolute inset-0 ${className}`}

@@ -22,7 +22,11 @@ export const scrollState = {
   screens: 0,
   /** 0 → 1 resolve of chaos into the wordmark, scrubbed by scroll */
   assemble: 0,
-  /** 0 → 1 eased hand-off once the word has been held */
+  /** 0 → 1 detonation of the settled word */
+  shatter: 0,
+  /** 0 → 1 unlock, part, and push through the vault doors */
+  vault: 0,
+  /** 0 → 1 eased release of the canvas layer at the very end */
   wordFade: 0,
 };
 
@@ -79,5 +83,7 @@ export function resetStage() {
   scrollState.px = 0;
   scrollState.screens = 0;
   scrollState.assemble = 0;
+  scrollState.shatter = 0;
+  scrollState.vault = 0;
   scrollState.wordFade = 0;
 }

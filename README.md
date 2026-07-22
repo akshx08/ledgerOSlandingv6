@@ -37,13 +37,23 @@ the letterforms in the last 10% of the resolve. Flat, unblurred, one block of
 colour — v2's specimen-plate shadow at wordmark scale. The letterforms
 themselves sit at a graphite weight so the plate carries the contrast.
 
+The exit is not a fade. The word DETONATES — every fragment that built a
+letterform is thrown outward, un-setting back into paper as it flies — and
+behind the debris stands what was always there: an industrial vault door,
+ink-black, ruled like the documents, with a great dial astride its seam. The
+dial turns while the debris is in the air, the halves part, and the camera
+drives through the opening. The interior is pure porcelain — the same colour
+as the page — so passing the threshold IS arriving at the site.
+
 Scroll budget, measured in screens (`components/Stage.tsx`):
 
 | Screens | What |
 |---|---|
 | 0 → 1.35 | the fragments resolve into the wordmark |
-| 1.35 → 1.8 | the word is held; the plate has landed |
-| 1.8 → 2.65 | the word eases out (cubic in-out) and hands the page over |
+| 1.35 → 1.6 | the word is held |
+| 1.6 → 2.0 | the detonation — debris flies past the viewer |
+| 1.8 → 2.7 | the unlock, the doors part, the camera drives through |
+| 2.65 → 2.9 | the host releases the frame — invisible, the frame is already porcelain |
 
 Measured in viewport heights rather than document percentages on purpose: a
 section added further down cannot silently re-time the opening.
@@ -87,8 +97,9 @@ npm run dev   # http://localhost:3350
 
 Query params:
 
-- `?assemble=0.55` — pin the resolve at a fixed progress. The tuning surface,
-  and the only way to capture a mid-resolve frame in a headless pane.
+- `?assemble=0.55`, `?shatter=0.5`, `?vault=0.4` — pin any act at a fixed
+  progress. The tuning surface, and the only way to capture a mid-act frame
+  in a headless pane. A later pin implies the earlier acts are complete.
 - `?native=1` — disable Lenis smooth scroll.
 
 ## If you touch the scene
