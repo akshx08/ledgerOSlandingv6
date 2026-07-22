@@ -26,10 +26,12 @@
  * into shadow.
  *
  * THE FINISH
- * As the last fragments land, a hard offset plate slides out from behind the
- * word in vermilion — v2's specimen-plate shadow, at wordmark scale. That is
- * the brutalist beat: no blur, no glow, one flat block of colour with a hard
- * edge, carrying the contrast the letterforms deliberately no longer carry.
+ * The word arrives as SET TYPE, not as a texture in the shape of type. The
+ * paper grain, the directional shading and the fog all belong to the chaos
+ * and are scaled out as each fragment takes its place, so the letterforms
+ * land flat and solid in the same ink the rest of the site sets its display
+ * type in. One colour, no accent, no plate: the wordmark is the argument, and
+ * anything decorating it is competing with it.
  */
 
 import { useEffect, useRef } from "react";
@@ -38,19 +40,27 @@ import * as THREE from "three";
 /**
  * COLOUR MANAGEMENT OFF, DELIBERATELY.
  *
- * three converts `new THREE.Color(0x3b3947)` from sRGB into its linear
- * working space (0.041, not 0.231) and relies on the renderer's output
- * transform to convert back. That transform is appended to the fragment
- * shaders of three's OWN materials; a ShaderMaterial that writes gl_FragColor
- * itself never receives it. The result is every colour in this scene emitting
- * at roughly half its intended lightness — which is exactly why the wordmark
- * kept reading as a black slab no matter how light the ink was set.
+ * three converts `new THREE.Color(0x0f0e17)` from sRGB into its linear
+ * working space and relies on the renderer's output transform to convert
+ * back. That transform is appended to the fragment shaders of three's OWN
+ * materials; a ShaderMaterial that writes gl_FragColor itself never receives
+ * it. The result is every colour emitting at roughly half its intended
+ * lightness — which is why the wordmark once read as a black slab no matter
+ * how light the ink was set.
  *
  * This scene is flat-shaded and its palette is authored as hex to match the
- * stylesheet, so the honest fix is to stay in one space end to end rather than
- * to hand-roll an encode in the shader and hope the two agree.
+ * stylesheet, so the honest fix is to stay in one space end to end rather
+ * than to hand-roll an encode in the shader and hope the two agree.
  */
 THREE.ColorManagement.enabled = false;
+
+/* Sampled from the stylesheet's own tokens rather than eyeballed, so the
+ * canvas ground and the CSS ground are the same colour and the seam between
+ * them is invisible:
+ *   --porcelain oklch(0.966 0.006 286) → #f3f3f8
+ *   --ink       oklch(0.17  0.019 286) → #0f0e17   (the display type's black) */
+const PORCELAIN = 0xf3f3f8;
+const INK = 0x0f0e17;
 
 const VERT = /* glsl */ `
 precision highp float;
@@ -62,7 +72,6 @@ attribute vec3 aWordRot;
 attribute vec2 aScale;
 attribute float aDelay;
 attribute float aTone;
-attribute float aAccent;
 attribute float aRules;
 
 uniform float uProgress;
@@ -70,17 +79,13 @@ uniform float uTime;
 uniform float uReduced;
 uniform float uWordScale;
 uniform float uLoosen;
-uniform float uShadow;      // 1.0 on the brutalist offset plate
-uniform vec3  uShadowOff;
 
 varying vec2  vUv;
 varying float vSettle;
 varying float vTone;
-varying float vAccent;
 varying float vFog;
 varying float vShade;
 varying float vRules;
-varying float vFacing;
 
 mat3 rotate(vec3 r){
   vec3 s = sin(r), c = cos(r);
@@ -93,7 +98,6 @@ mat3 rotate(vec3 r){
 void main(){
   vUv = uv;
   vTone = aTone;
-  vAccent = aAccent;
   vRules = aRules;
 
   // Each fragment has its own window inside the global progress, so the word
@@ -119,10 +123,6 @@ void main(){
 
   vec3 pos = mix(aChaosPos, aWordPos, s) + drift + breath;
 
-  // the plate is a HARD offset of the finished word — flat, unblurred, and
-  // only ever where the word already is
-  pos += uShadowOff * uShadow * s;
-
   vec3 spin = aChaosRot + vec3(uTime * 0.09) * (1.0 - uReduced);
   vec3 rot = mix(spin, aWordRot, s);
 
@@ -132,13 +132,10 @@ void main(){
   // scaling those same strips down and laying them into letterforms gives
   // thousands of thin slivers at slightly different angles, and that reads as
   // hatching, or handwriting, or scribble. It does not read as type. The word
-  // is meant to arrive as a BOLD SETTING, so the placed piece resolves to a
+  // is meant to arrive as a bold setting, so the placed piece resolves to a
   // small, near-uniform tile whose union has a clean edge and a solid middle.
-  //
-  // The plate's growth must stay well UNDER its offset, or it spreads past
-  // the word on every side and reads as a halo instead of a second impression.
   vec2 wordSc = vec2(uWordScale, uWordScale * 0.78) * (0.88 + aTone * 0.24);
-  vec2 sc = mix(aScale, wordSc, s) * (1.0 + uShadow * 0.38);
+  vec2 sc = mix(aScale, wordSc, s);
 
   mat3 R = rotate(rot);
   vec3 local3 = vec3(position.xy * sc, 0.0);
@@ -150,9 +147,9 @@ void main(){
   vec3 N = normalize(R * vec3(0.0, 0.0, 1.0));
   vec3 L = normalize(vec3(-0.35, 0.78, 0.52));
   float ndl = dot(N, L);
-  vFacing = step(0.0, ndl);
+  float facing = step(0.0, ndl);
   // the back of a sheet is not black, it is the same paper in less light
-  vShade = mix(0.58, 1.0, abs(ndl)) * mix(0.82, 1.0, vFacing);
+  vShade = mix(0.58, 1.0, abs(ndl)) * mix(0.82, 1.0, facing);
 
   vec4 mv = modelViewMatrix * vec4(world, 1.0);
   vFog = -mv.z;
@@ -165,19 +162,14 @@ precision highp float;
 
 uniform vec3  uPorcelain;
 uniform vec3  uInk;
-uniform vec3  uVermilion;
 uniform float uFogDensity;
-uniform float uShadow;
-uniform float uPlateIn;   // when the brutalist plate is allowed to exist
 
 varying vec2  vUv;
 varying float vSettle;
 varying float vTone;
-varying float vAccent;
 varying float vFog;
 varying float vShade;
 varying float vRules;
-varying float vFacing;
 
 void main(){
   vec2 p = abs(vUv - 0.5) * 2.0;
@@ -187,55 +179,27 @@ void main(){
   float border = smoothstep(0.98, 0.9, max(p.x, p.y));
   if (border < 0.5) discard;
 
-  /* ---- the brutalist plate ---- */
-  if (uShadow > 0.5) {
-    // It exists only once the word has essentially landed, and it is FLAT:
-    // no shading, no fog, no tonal variation. That flatness is the point —
-    // it reads as a printed block behind the type, not as more paper.
-    float on = smoothstep(0.90, 1.0, vSettle) * uPlateIn;
-    if (on < 0.01) discard;
-    gl_FragColor = vec4(mix(uPorcelain, uVermilion, on), 1.0);
-    return;
-  }
-
   // Fragments carry ruled lines, not a texture: a document reads as a
   // document because of the horizontal rhythm of type on it. The count varies
   // per sheet, so a shredded pile does not repeat one printed page.
   float rule = smoothstep(0.07, 0.0, abs(fract(vUv.y * vRules) - 0.5) - 0.33);
-  // a heavier band near the head of the sheet — a letterhead, a total row
   float head = smoothstep(0.055, 0.0, abs(vUv.y - 0.82) - 0.02);
-  // The floor is HIGH. These terms all multiply, and a 0.60 base combined
-  // with tone and shading landed the settled word at ~0.45 density — a light
-  // grey, not the graphite it is meant to be. Ruling should modulate the
-  // sheet, not halve it.
   float body = 0.86 + rule * 0.14 + head * 0.14;
 
-  // INK ON PAPER. Loose fragments sit light against the ground; placed ones
-  // darken as they take their place, so the darkening and the placing are the
-  // same event. The ceiling is deliberately short of black: the letterforms
-  // sit at a graphite weight and let the vermilion plate carry the contrast.
-  float density = (0.30 + vSettle * 0.70) * body * (0.82 + vTone * 0.18);
-  // Directional shading is what makes a TUMBLING sheet read as paper, and it
-  // is exactly what must not survive into the word: a settled fragment sits
-  // face-on, so N·L lands near 0.5 for every one of them and quietly halves
-  // the ink across the whole wordmark. Same failure as the fog — the depth
-  // cue belongs to the chaos, not to the payoff.
-  density *= mix(vShade, 1.0, vSettle * 0.85);
+  // EVERY TEXTURE CUE BELONGS TO THE CHAOS.
+  //
+  // Grain, tone variance, directional shading and fog are what make a
+  // tumbling scrap read as paper. All four also multiply, and carried into
+  // the settled state they drag the wordmark off full ink and leave it a
+  // washed grey with a furred surface. They are scaled out by settle, so the
+  // fragment is paper on the way in and set type once it lands.
+  float fog = 1.0 - exp(-uFogDensity * uFogDensity * vFog * vFog);
+  float paper = body * (0.82 + vTone * 0.18) * vShade * (1.0 - clamp(fog, 0.0, 1.0));
+  float surface = mix(paper, 1.0, vSettle * 0.88);
 
-  vec3 col = mix(uPorcelain, uInk, clamp(density, 0.0, 1.0));
+  float density = (0.30 + vSettle * 0.70) * surface;
 
-  // the signal: a rare minority of records carry the accent once placed.
-  // Colour is measurement here — it marks the ones the system acted on.
-  col = mix(col, uVermilion, vAccent * vSettle * 0.8);
-
-  // Porcelain fog — depth is distance into the page, not into shadow. Scaled
-  // OUT by settle: unstructured debris needs the depth cue and should
-  // dissolve into the ground, but fogging the resolved letterforms is what
-  // turns the wordmark grey, and the payoff has to arrive at full strength.
-  float f = 1.0 - exp(-uFogDensity * uFogDensity * vFog * vFog);
-  col = mix(col, uPorcelain, clamp(f, 0.0, 1.0) * (1.0 - vSettle * 0.92));
-
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(mix(uPorcelain, uInk, clamp(density, 0.0, 1.0)), 1.0);
 }
 `;
 
@@ -275,13 +239,18 @@ function rng(seed: number) {
 /**
  * Rasterise the wordmark and sample points inside its glyphs.
  *
+ * Set to match `.wide` exactly — the class the site's display type uses, and
+ * the one on the closing "Seats are few." — so the wordmark is the same
+ * setting the page ends on rather than a near-miss of it:
+ *   wght 700 · wdth 122 · letter-spacing -0.035em
+ *
  * THE FAMILY NAME MATTERS. next/font emits a scoped family
  * (`__Archivo_afd4a3`), so `ctx.font = "700 300px Archivo"` silently matches
- * nothing and rasterises in the browser's default sans — which is how the
- * first build ended up with a wordmark in the wrong typeface entirely. The
- * real name is read off the live headline, and `expanded` in the shorthand is
- * what reaches Archivo's width axis, since canvas cannot take
- * font-variation-settings.
+ * nothing and rasterises in the browser's default sans — which is how an
+ * earlier build ended up with a wordmark in the wrong typeface entirely. The
+ * real name is read off the live headline. Canvas cannot take
+ * font-variation-settings, but `expanded` in the shorthand is what reaches
+ * Archivo's width axis.
  */
 function sampleWord(
   text: string,
@@ -307,10 +276,7 @@ function sampleWord(
     /* pre-2023 engines simply set the word slightly loose */
   }
 
-  // 800, not the 700 the DOM display uses: this is a lockup made of paper
-  // rather than a line of running text, and it has to hold as a bold mass
-  // once several thousand tiles are standing in for its strokes.
-  const spec = (px: number) => `800 expanded ${px}px "${family}"`;
+  const spec = (px: number) => `700 expanded ${px}px "${family}"`;
 
   // fit the word to the plate rather than guessing a size
   let size = 300;
@@ -376,8 +342,10 @@ export default function Assembly({
       probe.textContent = WORD;
       document.body.appendChild(probe);
       const family =
-        getComputedStyle(probe).fontFamily.split(",")[0].trim().replace(/["']/g, "") ||
-        "sans-serif";
+        getComputedStyle(probe)
+          .fontFamily.split(",")[0]
+          .trim()
+          .replace(/["']/g, "") || "sans-serif";
       probe.remove();
 
       try {
@@ -408,10 +376,10 @@ export default function Assembly({
         alpha: false,
       });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-      // matches the ColorManagement.enabled = false decision above: no output
-      // transform, so what the shader writes is what the display gets
+      // matches the ColorManagement decision above: no output transform, so
+      // what the shader writes is what the display gets
       renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-      renderer.setClearColor(0xf3f2f6, 1); // porcelain
+      renderer.setClearColor(PORCELAIN, 1);
       host.appendChild(renderer.domElement);
       renderer.domElement.style.cssText =
         "width:100%;height:100%;display:block";
@@ -432,7 +400,6 @@ export default function Assembly({
       const scale = new Float32Array(count * 2);
       const delay = new Float32Array(count);
       const tone = new Float32Array(count);
-      const accent = new Float32Array(count);
       const rules = new Float32Array(count);
 
       for (let i = 0; i < count; i += 1) {
@@ -449,18 +416,16 @@ export default function Assembly({
         chaosRot[i * 3 + 1] = rand() * Math.PI * 2;
         chaosRot[i * 3 + 2] = rand() * Math.PI * 2;
 
-        // Placed: square to the reader. The residual jitter is now a fifth of
-        // what it was — at ±4° every tile fought its neighbours and the
+        // Placed: square to the reader. The residual jitter is a fifth of
+        // what it once was — at ±4° every tile fought its neighbours and the
         // letterform edges came out furred, which is most of what made the
-        // wordmark read as a texture rather than as set type. A trace remains
-        // so the setting is hand-straightened, not machine-perfect.
+        // wordmark read as a texture rather than as set type.
         wordRot[i * 3 + 0] = (rand() - 0.5) * 0.012;
         wordRot[i * 3 + 1] = (rand() - 0.5) * 0.012;
         wordRot[i * 3 + 2] = (rand() - 0.5) * 0.014;
 
         // A shredded pile is not one repeated sheet. Most fragments are torn
-        // strips — long and thin — with a minority of squarer pieces, which
-        // is what a document actually breaks into.
+        // strips — long and thin — with a minority of squarer pieces.
         const strip = rand();
         const w = 0.8 + rand() * 0.4;
         scale[i * 2 + 0] = w;
@@ -471,10 +436,6 @@ export default function Assembly({
 
         delay[i] = rand();
         tone[i] = 0.55 + rand() * 0.45;
-        // ~2% carry the signal. At 7% this read as measles across the
-        // letterforms rather than as a marked minority.
-        accent[i] = rand() < 0.02 ? 1 : 0;
-        // 3–7 ruled lines per sheet
         rules[i] = 3.0 + Math.floor(rand() * 5);
       }
 
@@ -487,67 +448,34 @@ export default function Assembly({
       geo.setAttribute("aScale", inst(scale, 2));
       geo.setAttribute("aDelay", inst(delay, 1));
       geo.setAttribute("aTone", inst(tone, 1));
-      geo.setAttribute("aAccent", inst(accent, 1));
       geo.setAttribute("aRules", inst(rules, 1));
       geo.instanceCount = count;
       // instances are placed entirely in the vertex shader, so three's own
       // culling would discard the whole field on the origin
       geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 90);
 
-      const shared = {
-        uProgress: { value: 0 },
-        uTime: { value: 0 },
-        uReduced: { value: reduced ? 1 : 0 },
-        uWordScale: { value: 0.34 },
-        uLoosen: { value: 0 },
-        uPlateIn: { value: 0 },
-        uPorcelain: { value: new THREE.Color(0xf3f2f6) },
-        // Graphite, not near-black. v2's body ink at full strength made the
-        // wordmark a black slab that fought the porcelain; pulled all the way
-        // back to a light grey it stopped reading as type at all. This sits
-        // between, and lets the vermilion plate carry the contrast.
-        uInk: { value: new THREE.Color(0x3b3947) },
-        uVermilion: { value: new THREE.Color(0xc8482a) },
-        uFogDensity: { value: 0.019 },
-      };
-
-      const mkMat = (isShadow: boolean) =>
-        new THREE.ShaderMaterial({
-          vertexShader: VERT,
-          fragmentShader: FRAG,
-          uniforms: {
-            ...shared,
-            uShadow: { value: isShadow ? 1 : 0 },
-            // A TIGHT offset. Far enough to read as a deliberate second
-            // impression, close enough that the word still reads as one
-            // object — at 0.62 the plate detached and became a red shape
-            // sitting next to the type rather than under it.
-            uShadowOff: {
-              value: isShadow
-                ? new THREE.Vector3(0.52, -0.52, -0.9)
-                : new THREE.Vector3(),
-            },
-          },
-          transparent: false,
-          depthWrite: true,
-          depthTest: true,
-          side: THREE.DoubleSide,
-          blending: THREE.NormalBlending,
-        });
-
-      const mat = mkMat(false);
-      const plateMat = mkMat(true);
-
-      // the plate is drawn first and sits behind — a hard offset block, the
-      // way v2's specimen plates cast theirs
-      const plate = new THREE.Mesh(geo, plateMat);
-      plate.frustumCulled = false;
-      plate.renderOrder = 0;
-      scene.add(plate);
+      const mat = new THREE.ShaderMaterial({
+        vertexShader: VERT,
+        fragmentShader: FRAG,
+        uniforms: {
+          uProgress: { value: 0 },
+          uTime: { value: 0 },
+          uReduced: { value: reduced ? 1 : 0 },
+          uWordScale: { value: 0.34 },
+          uLoosen: { value: 0 },
+          uPorcelain: { value: new THREE.Color(PORCELAIN) },
+          uInk: { value: new THREE.Color(INK) },
+          uFogDensity: { value: 0.019 },
+        },
+        transparent: false,
+        depthWrite: true,
+        depthTest: true,
+        side: THREE.DoubleSide,
+        blending: THREE.NormalBlending,
+      });
 
       const mesh = new THREE.Mesh(geo, mat);
       mesh.frustumCulled = false;
-      mesh.renderOrder = 1;
       scene.add(mesh);
 
       /* ---------- resize ---------- */
@@ -607,13 +535,6 @@ export default function Assembly({
         mat.uniforms.uProgress.value = p;
         mat.uniforms.uTime.value = t;
         mat.uniforms.uLoosen.value = sp;
-        plateMat.uniforms.uProgress.value = p;
-        plateMat.uniforms.uTime.value = t;
-        plateMat.uniforms.uLoosen.value = sp;
-        // the plate arrives in the last of the resolve, not with it
-        const plateIn = THREE.MathUtils.smoothstep(p, 0.86, 1.0);
-        mat.uniforms.uPlateIn.value = plateIn;
-        plateMat.uniforms.uPlateIn.value = plateIn;
 
         ptr.x += (ptr.tx - ptr.x) * 0.05;
         ptr.y += (ptr.ty - ptr.y) * 0.05;
@@ -621,15 +542,15 @@ export default function Assembly({
         // THE CAMERA IS THE NARRATOR. It begins inside the debris and comes
         // to rest square-on to the word. One move, never cut.
         //
-        // The resting distance is SOLVED from the aspect rather than typed in.
-        // A fixed dolly frames the word correctly on the one viewport it was
-        // authored against and lets it run off both edges on a phone.
+        // The resting distance is SOLVED from the aspect rather than typed
+        // in. A fixed dolly frames the word correctly on the one viewport it
+        // was authored against and lets it run off both edges on a phone.
         const e = 1 - Math.pow(1 - p, 2.1);
         const fit = portrait ? FIT_PORTRAIT : FIT_LANDSCAPE;
         const restD =
           WORD_W / (fit * 2 * Math.tan(HALF_FOV) * Math.max(camera.aspect, 0.3));
         const startD = restD * 1.5;
-        const dolly = startD + (restD - startD) * e - sp * restD * 0.1;
+        const dolly = startD + (restD - startD) * e;
 
         camera.position.set(
           ptr.x * (2.6 - e * 2.0),
@@ -657,7 +578,6 @@ export default function Assembly({
         plane.dispose();
         geo.dispose();
         mat.dispose();
-        plateMat.dispose();
         renderer.dispose();
         renderer.domElement.remove();
       };

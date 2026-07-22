@@ -32,9 +32,11 @@ import { emit, scrollState, setReady } from "@/lib/stage";
 /** screens of scroll spent resolving chaos → word */
 const ASSEMBLE = 1.35;
 /** the word is held from ASSEMBLE until here */
-const HOLD_END = 1.8;
-/** and has eased away by here */
-const FADE_END = 2.65;
+const HOLD_END = 1.7;
+/** and has flown away by here, handing the frame to the page behind it.
+ *  Kept tight on purpose — once the word is made, every further screen of
+ *  nothing but the word is a screen the visitor spends learning nothing. */
+const FADE_END = 2.3;
 
 const easeInOut = (t: number) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -82,13 +84,19 @@ export default function Stage({
       scrollState.wordFade = fade;
 
       if (host) {
-        // A little blur and lift as it goes, in the spirit of the reference's
-        // treatment of its footage — but far short of its 55px, which on a
-        // near-white ground is an even grey wash costing a full-screen filter
-        // pass for no image.
-        const blur = fade * 14;
+        // THE WORD LEAVES. It does not dissolve on the spot — it lifts out of
+        // frame and past the viewer, and the page comes up behind it. Scale
+        // and rise together read as "flying away"; either alone reads as a
+        // zoom or as a slide.
+        //
+        // Blur stays modest. The reference goes to 55px, but on a near-white
+        // ground that is an even grey wash costing a full-screen filter pass
+        // for no image.
+        const blur = fade * 12;
         host.style.opacity = String((1 - fade) * presence);
-        host.style.transform = `scale(${(1 + fade * 0.06).toFixed(4)})`;
+        host.style.transform =
+          `translate3d(0, ${(-fade * 46).toFixed(2)}vh, 0) ` +
+          `scale(${(1 + fade * 0.22).toFixed(4)})`;
         host.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
       }
 

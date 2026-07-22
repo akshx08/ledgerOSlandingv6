@@ -60,7 +60,7 @@ export default function Hero() {
   return (
     // The track. Its height IS the resolve's scroll budget — see Stage's
     // ASSEMBLE / HOLD_END / FADE_END, which are measured in the same unit.
-    <section className="relative h-[280vh]">
+    <section className="relative h-[245vh]">
       <div className="sticky top-0 flex h-[100svh] flex-col justify-between px-4 pb-12 pt-24 md:px-8 md:pb-14 md:pt-28">
         {/* ── top-left: the line ── */}
         <div ref={topRef} className="max-w-[24rem] sm:max-w-[32rem] lg:max-w-[40rem]">
