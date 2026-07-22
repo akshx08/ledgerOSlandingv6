@@ -79,6 +79,7 @@ uniform float uTime;
 uniform float uReduced;
 uniform float uWordScale;
 uniform float uLoosen;
+uniform float uSetIn;
 
 varying vec2  vUv;
 varying float vSettle;
@@ -137,6 +138,13 @@ void main(){
   vec2 wordSc = vec2(uWordScale, uWordScale * 0.78) * (0.88 + aTone * 0.24);
   vec2 sc = mix(aScale, wordSc, s);
 
+  // As the set type comes up, the tiles COMPACT toward their sample points
+  // rather than simply fading. A tile overhangs the glyph edge it was sampled
+  // inside, so a straight crossfade leaves a grey halo ringing the crisp
+  // letterforms and the whole thing reads as misregistered printing. Pulling
+  // them inward means the paper disappears into the word instead of out of it.
+  sc *= 1.0 - uSetIn * 0.72;
+
   mat3 R = rotate(rot);
   vec3 local3 = vec3(position.xy * sc, 0.0);
   vec3 world = R * local3 + pos;
@@ -163,6 +171,7 @@ precision highp float;
 uniform vec3  uPorcelain;
 uniform vec3  uInk;
 uniform float uFogDensity;
+uniform float uSetIn;   // the tiles hand over to the real letterforms
 
 varying vec2  vUv;
 varying float vSettle;
@@ -198,6 +207,13 @@ void main(){
   float surface = mix(paper, 1.0, vSettle * 0.88);
 
   float density = (0.30 + vSettle * 0.70) * surface;
+
+  // THE HAND-OVER. Several thousand rectangles can approximate a letterform
+  // but can never close its edge — the silhouette is always faintly furred,
+  // and no tile count fixes that. So in the last of the resolve the tiles
+  // give way to the actual set type drawn over them, and they recede into the
+  // ground as it arrives. The paper makes the word; then the word sets.
+  density *= 1.0 - uSetIn;
 
   gl_FragColor = vec4(mix(uPorcelain, uInk, clamp(density, 0.0, 1.0)), 1.0);
 }
@@ -252,14 +268,24 @@ function rng(seed: number) {
  * font-variation-settings, but `expanded` in the shorthand is what reaches
  * Archivo's width axis.
  */
-function sampleWord(
+/**
+ * Draw the wordmark into an offscreen canvas of the given size, always with
+ * the same relative layout: fitted to 94% of the width and centred. Both the
+ * point sampler and the set-type texture go through here, so they describe
+ * the same geometry at different resolutions and land on top of each other
+ * exactly — alignment is a property of the construction rather than
+ * something to nudge into place afterwards.
+ *
+ * `fill: null` leaves the background transparent, which is what the texture
+ * wants; the sampler only reads alpha, so it does not care.
+ */
+function renderWordCanvas(
   text: string,
-  count: number,
-  rand: () => number,
-  family: string
+  family: string,
+  W: number,
+  H: number,
+  fill: string | null
 ) {
-  const W = 1800;
-  const H = 460;
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = H;
@@ -268,7 +294,6 @@ function sampleWord(
 
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillStyle = "#000";
   type Tracking = CanvasRenderingContext2D & { letterSpacing?: string };
   try {
     (ctx as Tracking).letterSpacing = "-0.035em";
@@ -276,17 +301,39 @@ function sampleWord(
     /* pre-2023 engines simply set the word slightly loose */
   }
 
+  // NOTE: `expanded` is the only way to reach the width axis from canvas —
+  // it maps to wdth 125 against the stylesheet's 122. Percentages are NOT
+  // accepted here: the assignment fails silently and the context keeps
+  // whatever font it had, which looks exactly like it worked.
   const spec = (px: number) => `700 expanded ${px}px "${family}"`;
 
-  // fit the word to the plate rather than guessing a size
-  let size = 300;
+  let size = Math.round(W / 6);
   ctx.font = spec(size);
   const measured = ctx.measureText(text).width || 1;
   size = Math.max(40, Math.floor(size * ((W * 0.94) / measured)));
   ctx.font = spec(size);
 
   ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = fill ?? "#000";
   ctx.fillText(text, W / 2, H / 2);
+  return { canvas, ctx };
+}
+
+/** the raster the point sampler reads; also fixes the plane's aspect */
+const RASTER_W = 1800;
+const RASTER_H = 460;
+
+function sampleWord(
+  text: string,
+  count: number,
+  rand: () => number,
+  family: string
+) {
+  const W = RASTER_W;
+  const H = RASTER_H;
+  const made = renderWordCanvas(text, family, W, H, "#000");
+  if (!made) return null;
+  const { ctx } = made;
 
   const data = ctx.getImageData(0, 0, W, H).data;
   const hits: number[] = [];
@@ -466,6 +513,7 @@ export default function Assembly({
           uPorcelain: { value: new THREE.Color(PORCELAIN) },
           uInk: { value: new THREE.Color(INK) },
           uFogDensity: { value: 0.019 },
+          uSetIn: { value: 0 },
         },
         transparent: false,
         depthWrite: true,
@@ -477,6 +525,57 @@ export default function Assembly({
       const mesh = new THREE.Mesh(geo, mat);
       mesh.frustumCulled = false;
       scene.add(mesh);
+
+      /* ---------- the set type ----------
+       * The same wordmark the points were sampled from, drawn at 2x and laid
+       * over them on a quad that occupies exactly the sampler's coordinate
+       * space (RASTER_W maps to WORD_W). Because both come out of
+       * renderWordCanvas with the same fit rule, the type lands precisely on
+       * the shape the paper just built — there is no offset to tune.
+       *
+       * depthTest off and drawn last: the tiles are opaque and would
+       * otherwise punch through the glyphs wherever one happens to sit
+       * nearer the camera. */
+      const typeCanvas = renderWordCanvas(
+        WORD,
+        family,
+        RASTER_W * 2,
+        RASTER_H * 2,
+        `#${INK.toString(16).padStart(6, "0")}`
+      );
+      let typeMesh: THREE.Mesh | null = null;
+      let typeMat: THREE.MeshBasicMaterial | null = null;
+      let typeTex: THREE.CanvasTexture | null = null;
+      let typeGeo: THREE.PlaneGeometry | null = null;
+
+      if (typeCanvas) {
+        typeTex = new THREE.CanvasTexture(typeCanvas.canvas);
+        // no conversion anywhere: ColorManagement is off and the renderer
+        // writes linear, so the texture must not be tagged sRGB either
+        typeTex.colorSpace = THREE.NoColorSpace;
+        typeTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        typeTex.minFilter = THREE.LinearMipmapLinearFilter;
+        typeTex.magFilter = THREE.LinearFilter;
+        typeTex.generateMipmaps = true;
+        typeTex.needsUpdate = true;
+
+        typeGeo = new THREE.PlaneGeometry(
+          WORD_W,
+          (RASTER_H / RASTER_W) * WORD_W
+        );
+        typeMat = new THREE.MeshBasicMaterial({
+          map: typeTex,
+          transparent: true,
+          opacity: 0,
+          depthTest: false,
+          depthWrite: false,
+          toneMapped: false,
+        });
+        typeMesh = new THREE.Mesh(typeGeo, typeMat);
+        typeMesh.renderOrder = 2;
+        typeMesh.frustumCulled = false;
+        scene.add(typeMesh);
+      }
 
       /* ---------- resize ---------- */
       let portrait = false;
@@ -536,6 +635,14 @@ export default function Assembly({
         mat.uniforms.uTime.value = t;
         mat.uniforms.uLoosen.value = sp;
 
+        // The last twelve percent of the resolve is the hand-over: the tiles
+        // recede and the set type comes up in their place, so the word is
+        // real typography by the time it is held — and stays that way through
+        // the fly-away.
+        const setIn = THREE.MathUtils.smoothstep(p, 0.88, 1.0);
+        mat.uniforms.uSetIn.value = setIn;
+        if (typeMat) typeMat.opacity = setIn;
+
         ptr.x += (ptr.tx - ptr.x) * 0.05;
         ptr.y += (ptr.ty - ptr.y) * 0.05;
 
@@ -578,6 +685,9 @@ export default function Assembly({
         plane.dispose();
         geo.dispose();
         mat.dispose();
+        typeGeo?.dispose();
+        typeMat?.dispose();
+        typeTex?.dispose();
         renderer.dispose();
         renderer.domElement.remove();
       };

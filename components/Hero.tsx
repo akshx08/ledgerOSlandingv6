@@ -26,8 +26,13 @@ import { GLASS } from "@/components/Glass";
 import { onFrame, scrollState } from "@/lib/stage";
 import { OPEN } from "@/lib/content";
 
-/** the copy begins leaving once the word is essentially made */
-const EXIT_FROM = 0.72;
+/** The copy begins leaving well before the word is finished.
+ *
+ *  It used to hold to 0.72, which put a half-faded glass panel underneath a
+ *  wordmark that was already dark — two dark things crossing, and it read as
+ *  a collision rather than a hand-off. The copy is clear of the frame by the
+ *  time the letterforms have any weight. */
+const EXIT_FROM = 0.55;
 
 
 export default function Hero() {
