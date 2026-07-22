@@ -67,9 +67,10 @@ export default function Hero() {
     // ASSEMBLE / HOLD_END / FADE_END, which are measured in the same unit.
     // The track carries all three acts: resolve, hold, detonation, and the
     // drive through the debris. Its height is tuned so the next section is
-    // rising into frame — scaling up through Entry — while the camera is
-    // still moving, and has fully arrived as the canvas releases.
-    <section className="relative h-[300vh]">
+    // rising into frame — scaling up through Entry — while the debris is
+    // still in the air: the statement must be readable on the shatter's
+    // heels, not after a stretch of empty porcelain.
+    <section className="relative h-[260vh]">
       <div className="sticky top-0 flex h-[100svh] flex-col justify-between px-4 pb-12 pt-24 md:px-8 md:pb-14 md:pt-28">
         {/* ── top-left: the line ── */}
         <div ref={topRef} className="max-w-[24rem] sm:max-w-[32rem] lg:max-w-[40rem]">

@@ -49,10 +49,13 @@ export default function Cinematic() {
       // 1 as its bottom leaves the top
       const t = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height)));
 
-      // the reference's shape: in, hold, out
+      // The reference's shape: in, hold, out — with the entrance pulled
+      // forward. The statement is what ends the hero's porcelain stretch,
+      // so it must start reading the moment it clears the fold rather than
+      // a quarter of its transit later.
       let op: number;
-      if (t <= 0.12) op = 0;
-      else if (t <= 0.32) op = (t - 0.12) / 0.2;
+      if (t <= 0.04) op = 0;
+      else if (t <= 0.2) op = (t - 0.04) / 0.16;
       else if (t <= 0.62) op = 1;
       else if (t <= 0.86) op = 1 - (t - 0.62) / 0.24;
       else op = 0;
@@ -72,7 +75,9 @@ export default function Cinematic() {
   return (
     <section
       ref={secRef}
-      className="pointer-events-none relative mx-auto w-full max-w-5xl px-6 pb-32 pt-24"
+      // pt is deliberately shallow: the dead porcelain above this section is
+      // part of the hero's hand-off, and every rem of padding here extends it
+      className="pointer-events-none relative mx-auto w-full max-w-5xl px-6 pb-32 pt-10"
       style={{ perspective: "400px" }}
     >
       <div

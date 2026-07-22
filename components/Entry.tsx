@@ -49,12 +49,15 @@ export default function Entry({ children }: { children: React.ReactNode }) {
       }
 
       const e = easeInOut(en);
-      // From 78% and dim to full presence. The origin sits at the top of the
-      // wrapper, centred — the visible first section grows toward the viewer
-      // out of the middle of the frame rather than swinging up from a corner.
-      const sc = 0.78 + 0.22 * e;
+      // From 82% and half-present to full presence. The origin sits at the
+      // top of the wrapper, centred — the visible first section grows toward
+      // the viewer out of the middle of the frame rather than swinging up
+      // from a corner. The floor is deliberately high: the incoming copy is
+      // the thing that ends the porcelain stretch, so it has to be readable
+      // while it is still arriving, not only once it has arrived.
+      const sc = 0.82 + 0.18 * e;
       el.style.transform = `scale(${sc.toFixed(4)})`;
-      el.style.opacity = String(0.35 + 0.65 * e);
+      el.style.opacity = String(0.5 + 0.5 * e);
     };
 
     el.style.transformOrigin = "50% 0";

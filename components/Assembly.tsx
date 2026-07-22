@@ -59,6 +59,8 @@ attribute vec3 aWordPos;
 attribute vec3 aChaosRot;
 attribute vec3 aWordRot;
 attribute vec3 aBurst;
+attribute vec3 aCellDir;
+attribute float aCellDelay;
 attribute vec2 aScale;
 attribute float aDelay;
 attribute float aTone;
@@ -100,9 +102,13 @@ void main(){
   float s = 1.0 - pow(1.0 - local, 3.0);
   vSettle = s;
 
-  // The detonation is nearly simultaneous — a stagger wide enough to read as
-  // a sequence would read as a dissolve, and the beat is a BREAK.
-  float sh = clamp((uShatter - aDelay * 0.12) / 0.88, 0.0, 1.0);
+  // THE BREAK HAPPENS IN TWO SCALES. The word first CRACKS along cell lines
+  // — neighbouring fragments share a cell direction and leave together, so
+  // for an instant you see the letterforms come apart in PIECES, like a
+  // pane — and only then does each piece blow out into individual scraps.
+  // A single per-fragment scatter reads as a dissolve; the crack is what
+  // makes it a shatter.
+  float sh = clamp((uShatter - (aDelay * 0.06 + aCellDelay * 0.20)) / 0.74, 0.0, 1.0);
   // ease-out: the violence is all in the first instant
   float shD = 1.0 - pow(1.0 - sh, 2.2);
   vShatter = sh;
@@ -123,11 +129,13 @@ void main(){
 
   vec3 pos = mix(aChaosPos, aWordPos, s) + drift + breath;
 
-  // THE BURST. Directions are baked per fragment — outward from the word's
-  // centre with a strong bias toward the camera, so the debris does not just
-  // scatter, it comes PAST the viewer. Distance keys off tone so the field
-  // gets depth instead of a uniform shell.
-  pos += aBurst * shD * (16.0 + aTone * 30.0);
+  // THE BURST, in its two scales: the cell carries the piece out whole, and
+  // the per-fragment spread — quadratic, so it arrives late — tears the
+  // piece into scraps mid-flight. Directions are baked; distance keys off
+  // tone so the field gets depth instead of a uniform shell, and the camera
+  // bias means the debris comes PAST the viewer, not merely away.
+  pos += aCellDir * shD * (11.0 + aTone * 9.0);
+  pos += aBurst * shD * shD * (12.0 + aTone * 26.0);
 
   vec3 spin = aChaosRot + vec3(uTime * 0.09) * (1.0 - uReduced);
   vec3 rot = mix(spin, aWordRot, s);
@@ -202,12 +210,19 @@ void main(){
   float head = smoothstep(0.055, 0.0, abs(vUv.y - 0.82) - 0.02);
   float body = 0.86 + rule * 0.14 + head * 0.14;
 
-  // Texture cues belong to loose paper: scaled out as a fragment sets into
-  // the word, and brought BACK as it shatters out of it.
+  // THE WORD IS A COLLAGE, NOT A FILL. What a settled fragment sheds is the
+  // atmosphere — fog, back-face dimming — never its identity as a document.
+  // Each tile keeps its ruled lines and its own tone, and a fraction of the
+  // directional shading survives, so the letterforms read as a mosaic of
+  // dark paper scraps with visible grain: type physically constructed from
+  // records, not type painted black. The darkest tiles anchor at full ink,
+  // which is what keeps the word bold while the lighter tiles give it
+  // surface. All of it returns to loose paper as the fragment shatters out.
   float settleEff = vSettle * (1.0 - vShatter * 0.85);
   float fog = 1.0 - exp(-uFogDensity * uFogDensity * vFog * vFog);
   float paper = body * (0.82 + vTone * 0.18) * vShade * (1.0 - clamp(fog, 0.0, 1.0));
-  float surface = mix(paper, 1.0, settleEff * 0.88);
+  float collage = body * (0.72 + vTone * 0.34) * (0.82 + 0.18 * vShade);
+  float surface = mix(paper, collage, settleEff);
 
   float density = (0.30 + settleEff * 0.70) * surface;
 
@@ -424,6 +439,8 @@ export default function Assembly({
       const chaosRot = new Float32Array(count * 3);
       const wordRot = new Float32Array(count * 3);
       const burst = new Float32Array(count * 3);
+      const cellDir = new Float32Array(count * 3);
+      const cellDelay = new Float32Array(count);
       const scale = new Float32Array(count * 2);
       const delay = new Float32Array(count);
       const tone = new Float32Array(count);
@@ -458,6 +475,31 @@ export default function Assembly({
         burst[i * 3 + 1] = by / bl;
         burst[i * 3 + 2] = bz / bl;
 
+        // THE CRACK CELLS. Fragments are binned into coarse cells over the
+        // wordmark; everything in a cell shares one direction and one delay,
+        // hashed from the cell coordinates — deterministic, no per-cell
+        // bookkeeping. Piece size is the cell size: ~2.6 world units, big
+        // enough that a letter breaks into a handful of shards rather than
+        // confetti.
+        const cx = Math.floor(wordPos[i * 3 + 0] / 2.6);
+        const cy = Math.floor(wordPos[i * 3 + 1] / 2.2);
+        const h = Math.sin(cx * 127.1 + cy * 311.7) * 43758.5453;
+        const h1 = h - Math.floor(h);
+        const h2 = (h * 1.618) % 1 < 0 ? ((h * 1.618) % 1) + 1 : (h * 1.618) % 1;
+        // outward from the word's centre, tilted by the cell's own hash so
+        // the crack pattern is irregular, with a toward-camera component
+        const ca =
+          Math.atan2(cy * 2.2 + 1.1, (cx * 2.6 + 1.3) * 0.4) +
+          (h1 - 0.5) * 1.3;
+        const cdx = Math.cos(ca);
+        const cdy = Math.sin(ca) * 0.8;
+        const cdz = 0.35 + h2 * 0.9;
+        const cl = Math.hypot(cdx, cdy, cdz) || 1;
+        cellDir[i * 3 + 0] = cdx / cl;
+        cellDir[i * 3 + 1] = cdy / cl;
+        cellDir[i * 3 + 2] = cdz / cl;
+        cellDelay[i] = h2;
+
         const strip = rand();
         const w = 0.8 + rand() * 0.4;
         scale[i * 2 + 0] = w;
@@ -478,6 +520,8 @@ export default function Assembly({
       geo.setAttribute("aChaosRot", inst(chaosRot, 3));
       geo.setAttribute("aWordRot", inst(wordRot, 3));
       geo.setAttribute("aBurst", inst(burst, 3));
+      geo.setAttribute("aCellDir", inst(cellDir, 3));
+      geo.setAttribute("aCellDelay", inst(cellDelay, 1));
       geo.setAttribute("aScale", inst(scale, 2));
       geo.setAttribute("aDelay", inst(delay, 1));
       geo.setAttribute("aTone", inst(tone, 1));
