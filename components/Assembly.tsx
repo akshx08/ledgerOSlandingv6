@@ -79,9 +79,10 @@ uniform float uTime;
 uniform float uReduced;
 uniform float uWordScale;
 uniform float uLoosen;
-uniform float uSetIn;
+uniform vec2  uWordSize;   // the wordmark plane in world units
 
 varying vec2  vUv;
+varying vec2  vWordUv;     // where this pixel falls in the wordmark
 varying float vSettle;
 varying float vTone;
 varying float vFog;
@@ -138,13 +139,6 @@ void main(){
   vec2 wordSc = vec2(uWordScale, uWordScale * 0.78) * (0.88 + aTone * 0.24);
   vec2 sc = mix(aScale, wordSc, s);
 
-  // As the set type comes up, the tiles COMPACT toward their sample points
-  // rather than simply fading. A tile overhangs the glyph edge it was sampled
-  // inside, so a straight crossfade leaves a grey halo ringing the crisp
-  // letterforms and the whole thing reads as misregistered printing. Pulling
-  // them inward means the paper disappears into the word instead of out of it.
-  sc *= 1.0 - uSetIn * 0.72;
-
   mat3 R = rotate(rot);
   vec3 local3 = vec3(position.xy * sc, 0.0);
   vec3 world = R * local3 + pos;
@@ -159,6 +153,13 @@ void main(){
   // the back of a sheet is not black, it is the same paper in less light
   vShade = mix(0.58, 1.0, abs(ndl)) * mix(0.82, 1.0, facing);
 
+  // Where this pixel falls inside the wordmark, in the SAME space the sample
+  // points were drawn from. Taken from the interpolated world position rather
+  // than from the instance's target, so it varies across the face of each
+  // tile — which is what lets the fragment shader cut the tile along the
+  // glyph edge instead of merely keeping or dropping it whole.
+  vWordUv = vec2(world.x / uWordSize.x + 0.5, 0.5 - world.y / uWordSize.y);
+
   vec4 mv = modelViewMatrix * vec4(world, 1.0);
   vFog = -mv.z;
   gl_Position = projectionMatrix * mv;
@@ -168,12 +169,13 @@ void main(){
 const FRAG = /* glsl */ `
 precision highp float;
 
-uniform vec3  uPorcelain;
-uniform vec3  uInk;
-uniform float uFogDensity;
-uniform float uSetIn;   // the tiles hand over to the real letterforms
+uniform vec3      uPorcelain;
+uniform vec3      uInk;
+uniform float     uFogDensity;
+uniform sampler2D uWordTex;   // the wordmark's own coverage, as a stencil
 
 varying vec2  vUv;
+varying vec2  vWordUv;
 varying float vSettle;
 varying float vTone;
 varying float vFog;
@@ -187,6 +189,28 @@ void main(){
   // the stack occlude itself the way paper actually does
   float border = smoothstep(0.98, 0.9, max(p.x, p.y));
   if (border < 0.5) discard;
+
+  // THE PAPER IS TRIMMED TO THE LETTERFORM.
+  //
+  // A tile is sampled from a point inside a glyph, but the tile itself is a
+  // rectangle and overhangs the glyph's edge. Thousands of overhangs are what
+  // furred the wordmark, and no tile count fixes it — the union of rectangles
+  // simply is not a letterform.
+  //
+  // So as a fragment lands it gets CUT against the wordmark's own coverage.
+  // The union then has the exact edge of the type, while every pixel inside
+  // it is still a piece of document. The word is made of the paper rather
+  // than printed over it.
+  //
+  // Per-fragment, driven by that fragment's own settle: a scrap in flight is
+  // whole, and is trimmed only as it takes its place.
+  float cover = texture2D(uWordTex, vWordUv).a;
+  float trim  = smoothstep(0.45, 0.98, vSettle);
+  // soft across roughly one texel of the 3600px stencil, so the cut edge is
+  // resolved by coverage rather than by a hard alpha test
+  float inside = smoothstep(0.42, 0.58, cover);
+  float keep = mix(1.0, inside, trim);
+  if (keep < 0.02) discard;
 
   // Fragments carry ruled lines, not a texture: a document reads as a
   // document because of the horizontal rhythm of type on it. The count varies
@@ -208,14 +232,9 @@ void main(){
 
   float density = (0.30 + vSettle * 0.70) * surface;
 
-  // THE HAND-OVER. Several thousand rectangles can approximate a letterform
-  // but can never close its edge — the silhouette is always faintly furred,
-  // and no tile count fixes that. So in the last of the resolve the tiles
-  // give way to the actual set type drawn over them, and they recede into the
-  // ground as it arrives. The paper makes the word; then the word sets.
-  density *= 1.0 - uSetIn;
-
-  gl_FragColor = vec4(mix(uPorcelain, uInk, clamp(density, 0.0, 1.0)), 1.0);
+  // alphaToCoverage turns this into MSAA coverage, so the trimmed edge is
+  // antialiased while the material stays opaque and keeps occluding properly
+  gl_FragColor = vec4(mix(uPorcelain, uInk, clamp(density, 0.0, 1.0)), keep);
 }
 `;
 
@@ -411,6 +430,10 @@ export default function Assembly({
       const reduced = window.matchMedia(
         "(prefers-reduced-motion: reduce)"
       ).matches;
+      // `?assemble=` must show the state it names, exactly. Easing toward it
+      // makes the tuning surface lie — most visibly in a pane where rAF is
+      // paused and the eased value never arrives at all.
+      const pinned = new URLSearchParams(window.location.search).has("assemble");
       const small = window.innerWidth < 900;
       const count = reduced ? 2400 : small ? 4200 : COUNT;
 
@@ -501,6 +524,37 @@ export default function Assembly({
       // culling would discard the whole field on the origin
       geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 90);
 
+      /* The stencil: the same wordmark the points were sampled from, at 2x,
+       * used purely as coverage. Because it comes out of renderWordCanvas
+       * with the same fit rule as the sampler, its UV space and the sample
+       * space are the same space — the trim lines up by construction. */
+      const stencil = renderWordCanvas(
+        WORD,
+        family,
+        RASTER_W * 2,
+        RASTER_H * 2,
+        "#000"
+      );
+      const wordTex = stencil
+        ? new THREE.CanvasTexture(stencil.canvas)
+        : null;
+      if (wordTex) {
+        wordTex.colorSpace = THREE.NoColorSpace;
+        // The vertex shader derives v from world Y directly (v=0 at the top
+        // of the word), so the texture must NOT also flip. Leaving three's
+        // default flipY on samples the glyphs upside down, which renders as
+        // convincing-looking but mirrored letterforms.
+        wordTex.flipY = false;
+        wordTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        wordTex.minFilter = THREE.LinearMipmapLinearFilter;
+        wordTex.magFilter = THREE.LinearFilter;
+        // the stencil is sampled far outside 0..1 by tiles that have not
+        // landed yet; clamping keeps those reading as "outside the glyph"
+        wordTex.wrapS = THREE.ClampToEdgeWrapping;
+        wordTex.wrapT = THREE.ClampToEdgeWrapping;
+        wordTex.needsUpdate = true;
+      }
+
       const mat = new THREE.ShaderMaterial({
         vertexShader: VERT,
         fragmentShader: FRAG,
@@ -513,69 +567,28 @@ export default function Assembly({
           uPorcelain: { value: new THREE.Color(PORCELAIN) },
           uInk: { value: new THREE.Color(INK) },
           uFogDensity: { value: 0.019 },
-          uSetIn: { value: 0 },
+          uWordTex: { value: wordTex },
+          uWordSize: {
+            value: new THREE.Vector2(
+              WORD_W,
+              (RASTER_H / RASTER_W) * WORD_W
+            ),
+          },
         },
         transparent: false,
         depthWrite: true,
         depthTest: true,
         side: THREE.DoubleSide,
         blending: THREE.NormalBlending,
+        // resolves the trimmed edge through MSAA samples instead of a hard
+        // alpha test, without giving up depth-sorted opacity
+        alphaToCoverage: true,
       });
 
       const mesh = new THREE.Mesh(geo, mat);
       mesh.frustumCulled = false;
       scene.add(mesh);
 
-      /* ---------- the set type ----------
-       * The same wordmark the points were sampled from, drawn at 2x and laid
-       * over them on a quad that occupies exactly the sampler's coordinate
-       * space (RASTER_W maps to WORD_W). Because both come out of
-       * renderWordCanvas with the same fit rule, the type lands precisely on
-       * the shape the paper just built — there is no offset to tune.
-       *
-       * depthTest off and drawn last: the tiles are opaque and would
-       * otherwise punch through the glyphs wherever one happens to sit
-       * nearer the camera. */
-      const typeCanvas = renderWordCanvas(
-        WORD,
-        family,
-        RASTER_W * 2,
-        RASTER_H * 2,
-        `#${INK.toString(16).padStart(6, "0")}`
-      );
-      let typeMesh: THREE.Mesh | null = null;
-      let typeMat: THREE.MeshBasicMaterial | null = null;
-      let typeTex: THREE.CanvasTexture | null = null;
-      let typeGeo: THREE.PlaneGeometry | null = null;
-
-      if (typeCanvas) {
-        typeTex = new THREE.CanvasTexture(typeCanvas.canvas);
-        // no conversion anywhere: ColorManagement is off and the renderer
-        // writes linear, so the texture must not be tagged sRGB either
-        typeTex.colorSpace = THREE.NoColorSpace;
-        typeTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        typeTex.minFilter = THREE.LinearMipmapLinearFilter;
-        typeTex.magFilter = THREE.LinearFilter;
-        typeTex.generateMipmaps = true;
-        typeTex.needsUpdate = true;
-
-        typeGeo = new THREE.PlaneGeometry(
-          WORD_W,
-          (RASTER_H / RASTER_W) * WORD_W
-        );
-        typeMat = new THREE.MeshBasicMaterial({
-          map: typeTex,
-          transparent: true,
-          opacity: 0,
-          depthTest: false,
-          depthWrite: false,
-          toneMapped: false,
-        });
-        typeMesh = new THREE.Mesh(typeGeo, typeMat);
-        typeMesh.renderOrder = 2;
-        typeMesh.frustumCulled = false;
-        scene.add(typeMesh);
-      }
 
       /* ---------- resize ---------- */
       let portrait = false;
@@ -626,7 +639,7 @@ export default function Assembly({
         // A stalled tab must snap, never crawl the whole assembly. Reduced
         // motion snaps too: the sort itself is content and stays scroll-
         // linked, but the smoothing that trails the scroll is decoration.
-        if (rawDt > 0.25 || reduced) eased = target;
+        if (pinned || rawDt > 0.25 || reduced) eased = target;
         else eased += (target - eased) * Math.min(1, dt * 4.0);
         const p = eased;
         const sp = THREE.MathUtils.clamp(scrollRef.current ?? 0, 0, 1);
@@ -634,14 +647,6 @@ export default function Assembly({
         mat.uniforms.uProgress.value = p;
         mat.uniforms.uTime.value = t;
         mat.uniforms.uLoosen.value = sp;
-
-        // The last twelve percent of the resolve is the hand-over: the tiles
-        // recede and the set type comes up in their place, so the word is
-        // real typography by the time it is held — and stays that way through
-        // the fly-away.
-        const setIn = THREE.MathUtils.smoothstep(p, 0.88, 1.0);
-        mat.uniforms.uSetIn.value = setIn;
-        if (typeMat) typeMat.opacity = setIn;
 
         ptr.x += (ptr.tx - ptr.x) * 0.05;
         ptr.y += (ptr.ty - ptr.y) * 0.05;
@@ -685,9 +690,7 @@ export default function Assembly({
         plane.dispose();
         geo.dispose();
         mat.dispose();
-        typeGeo?.dispose();
-        typeMat?.dispose();
-        typeTex?.dispose();
+        wordTex?.dispose();
         renderer.dispose();
         renderer.domElement.remove();
       };
