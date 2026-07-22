@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Stage from "@/components/Stage";
 import Hero from "@/components/Hero";
+import Entry from "@/components/Entry";
 import Cinematic from "@/components/Cinematic";
 import Marquee from "@/components/Marquee";
 import Figure from "@/components/Figure";
@@ -20,6 +21,10 @@ export default function Home() {
         {/* ── cold open ── copy takes the corners, the word keeps the middle */}
         <Hero />
 
+        {/* Everything below arrives THROUGH the shattered word: Entry scales
+            the rest of the page up out of the porcelain as the camera drives
+            forward, so the site itself is what the visitor enters. */}
+        <Entry>
         {/* ── the statement ── laid back in space, passing through the frame */}
         <Cinematic />
 
@@ -86,6 +91,7 @@ export default function Home() {
             </Link>
           </div>
         </section>
+        </Entry>
       </main>
     </>
   );

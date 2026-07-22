@@ -24,8 +24,9 @@ export const scrollState = {
   assemble: 0,
   /** 0 → 1 detonation of the settled word */
   shatter: 0,
-  /** 0 → 1 unlock, part, and push through the vault doors */
-  vault: 0,
+  /** 0 → 1 drive through the debris into the page — Entry.tsx scales the
+   *  document up to meet the camera on this value */
+  enter: 0,
   /** 0 → 1 eased release of the canvas layer at the very end */
   wordFade: 0,
 };
@@ -84,6 +85,6 @@ export function resetStage() {
   scrollState.screens = 0;
   scrollState.assemble = 0;
   scrollState.shatter = 0;
-  scrollState.vault = 0;
+  scrollState.enter = 0;
   scrollState.wordFade = 0;
 }

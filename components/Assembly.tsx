@@ -14,16 +14,16 @@
  * shading return — because what breaks apart is the record, not a picture
  * of it. Nothing is created and nothing is destroyed, in both directions.
  *
- * ACT III — THE VAULT. Behind the debris, out of the porcelain fog, stands
- * what was always faintly there: an industrial door the height of the frame,
- * ink-black, ruled like the documents, carrying a great dial astride its
- * seam. The dial turns while the debris is still in the air, the halves
- * part, and the camera drives through the opening. The interior is pure
- * porcelain — the same colour as the page — so passing the threshold IS
- * arriving at the site. The hand-off is invisible by construction.
+ * ACT III — THE ENTRY. The camera drives forward through the debris field
+ * into clear porcelain, and the PAGE ITSELF comes up to meet the viewer —
+ * the sections below scale out of the distance toward full size (see
+ * Entry.tsx). There is no set-piece between the word and the site: what you
+ * enter through the shattered word is the product's own first argument.
+ * The porcelain the camera arrives in is the page's own ground, so the
+ * hand-off is invisible by construction.
  *
  * THE CLOCK IS THE SCROLLBAR throughout. Every act is scrubbed, never
- * played; the visitor can stop mid-detonation or back out of the vault.
+ * played; the visitor can stop mid-detonation or back straight out again.
  */
 
 import { useEffect, useRef } from "react";
@@ -48,7 +48,6 @@ THREE.ColorManagement.enabled = false;
  *   --vermilion oklch(0.53  0.205 30)  → #c71a0c  */
 const PORCELAIN = 0xf3f3f8;
 const INK = 0x0f0e17;
-const VERMILION = 0xc71a0c;
 
 /* ------------------------------ fragments ------------------------------ */
 
@@ -216,106 +215,13 @@ void main(){
 }
 `;
 
-/* -------------------------------- doors -------------------------------- */
-
-const DOOR_VERT = /* glsl */ `
-precision highp float;
-
-varying vec3  vL;
-varying vec3  vN;
-varying float vFogD;
-
-void main(){
-  vL = position;
-  vN = normal;
-  vec4 mv = modelViewMatrix * vec4(position, 1.0);
-  vFogD = -mv.z;
-  gl_Position = projectionMatrix * mv;
-}
-`;
-
-const DOOR_FRAG = /* glsl */ `
-precision highp float;
-
-uniform vec3  uPorcelain;
-uniform vec3  uInk;
-uniform vec3  uVermilion;
-uniform float uFogDensity;
-uniform float uDial;    // the unlock, in radians
-uniform float uSide;    // +1 left door, -1 right — the inner edge
-uniform vec2  uHalf;    // half-extents of the door face
-uniform float uReveal;  // the vault exists only once the word has broken
-
-varying vec3  vL;
-varying vec3  vN;
-varying float vFogD;
-
-void main(){
-  // ink slab under one fixed light — the same light the paper catches
-  vec3 L = normalize(vec3(-0.35, 0.78, 0.52));
-  float nl = dot(normalize(vN), L);
-  vec3 col = uInk * (0.82 + 0.34 * max(nl, 0.0));
-
-  // engraved horizontal panel lines: the door is ruled like the documents,
-  // because the vault and the records are the same institution
-  float band = abs(fract(vL.y / 4.2 + 0.5) - 0.5) * 4.2;
-  float groove = smoothstep(0.16, 0.04, band - 1.92);
-  col = mix(col, uPorcelain, groove * 0.08);
-
-  // hairline border on the face
-  vec2 b = uHalf - abs(vL.xy);
-  float rim = smoothstep(0.34, 0.12, min(b.x, b.y));
-  col = mix(col, uPorcelain, rim * 0.14);
-
-  // THE DIAL. One great wheel astride the seam — half on each door — that
-  // turns as the debris is still in the air. Drawn in door-local space so it
-  // travels with its half when the doors part.
-  vec2 c = vec2(uSide * uHalf.x, 0.0);
-  vec2 d = vL.xy - c;
-  float r = length(d);
-  float ringO = smoothstep(0.30, 0.12, abs(r - 9.4));
-  float ringI = smoothstep(0.22, 0.09, abs(r - 6.2));
-  float ang = atan(d.y, d.x) + uDial;
-  float spokeF = abs(fract(ang / 0.5236 + 0.5) - 0.5) * 0.5236 * r;
-  float spoke = smoothstep(0.30, 0.10, spokeF) * step(2.2, r) * (1.0 - step(9.3, r));
-  float hub = smoothstep(0.24, 0.10, abs(r - 2.0));
-  col = mix(col, uPorcelain, (ringO * 0.55 + ringI * 0.4 + spoke * 0.32 + hub * 0.5));
-
-  // bolt heads on a fixed ring — the frame does not rotate with the wheel
-  float angF = atan(d.y, d.x);
-  float bStep = 0.5236;
-  float bAng = (floor(angF / bStep) + 0.5) * bStep;
-  float bd = length(d - vec2(cos(bAng), sin(bAng)) * 12.6);
-  float bolt = smoothstep(0.58, 0.34, bd);
-  col = mix(col, uPorcelain, bolt * 0.30);
-
-  // the inner edge carries the signal: a vermilion seam, the one line of
-  // colour on the whole door
-  float edge = smoothstep(0.5, 0.14, abs(vL.x - uSide * uHalf.x));
-  col = mix(col, uVermilion, edge);
-
-  // the same porcelain fog the paper lives in — the door RESOLVES out of the
-  // distance as the camera drives at it, no pop-in anywhere
-  float f = 1.0 - exp(-uFogDensity * uFogDensity * vFogD * vFogD);
-  col = mix(col, uPorcelain, clamp(f, 0.0, 1.0));
-
-  // THE REVEAL. While the word stands, the vault does not exist — the frame
-  // belongs to the porcelain and the type. Fog cannot hide a wall this size
-  // at this distance, so its presence is gated outright: the detonation is
-  // what discloses that the word was standing in front of a door all along.
-  col = mix(uPorcelain, col, uReveal);
-
-  gl_FragColor = vec4(col, 1.0);
-}
-`;
-
 type Props = {
   /** 0 → 1 assembly, scrubbed by scroll. */
   assembleRef: React.RefObject<number>;
   /** 0 → 1 detonation of the settled word. */
   shatterRef: React.RefObject<number>;
-  /** 0 → 1 unlock, part, and push through the doors. */
-  vaultRef: React.RefObject<number>;
+  /** 0 → 1 drive through the debris into the page. */
+  enterRef: React.RefObject<number>;
   /** 0 → 1 continued scroll, for the breathing. */
   scrollRef: React.RefObject<number>;
   className?: string;
@@ -333,16 +239,10 @@ const FIT_PORTRAIT = 0.86;
 const DROP_LANDSCAPE = 0.09;
 const DROP_PORTRAIT = 0.025;
 
-/** the vault stands well behind the word, deep enough into the porcelain fog
- *  to be only a presence until the camera drives at it. Sized past the
- *  frustum at its first appearance — a vault door with porcelain sky at its
- *  corners is a prop, not a wall. */
-const DOOR_Z = -34;
-const DOOR_W = 46;
-const DOOR_H = 64;
-const DOOR_T = 4;
-/** the resting seam gap — a vermilion hairline of interior light */
-const SEAM = 0.4;
+/** where the camera ends its drive — past the origin plane the debris burst
+ *  from, into clear porcelain. Empty on purpose: the destination is not a
+ *  set-piece, it is the page, and the page arrives in the DOM (Entry.tsx). */
+const THROUGH_Z = -42;
 
 const easeInOut = (t: number) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -442,7 +342,7 @@ function sampleWord(
 export default function Assembly({
   assembleRef,
   shatterRef,
-  vaultRef,
+  enterRef,
   scrollRef,
   className = "",
 }: Props) {
@@ -487,11 +387,11 @@ export default function Assembly({
       const reduced = window.matchMedia(
         "(prefers-reduced-motion: reduce)"
       ).matches;
-      // `?assemble=` / `?shatter=` / `?vault=` must show the state they name,
+      // `?assemble=` / `?shatter=` / `?enter=` must show the state they name,
       // exactly — easing toward a pin makes the tuning surface lie.
       const q = new URLSearchParams(window.location.search);
       const pinned =
-        q.has("assemble") || q.has("shatter") || q.has("vault");
+        q.has("assemble") || q.has("shatter") || q.has("enter");
       const small = window.innerWidth < 900;
       const count = reduced ? 2400 : small ? 4200 : COUNT;
 
@@ -637,36 +537,6 @@ export default function Assembly({
       mesh.frustumCulled = false;
       scene.add(mesh);
 
-      /* ---------- the vault ---------- */
-      const doorGeo = new THREE.BoxGeometry(DOOR_W, DOOR_H, DOOR_T);
-      const mkDoor = (side: 1 | -1) =>
-        new THREE.ShaderMaterial({
-          vertexShader: DOOR_VERT,
-          fragmentShader: DOOR_FRAG,
-          uniforms: {
-            uPorcelain: { value: new THREE.Color(PORCELAIN) },
-            uInk: { value: new THREE.Color(INK) },
-            uVermilion: { value: new THREE.Color(VERMILION) },
-            // Lighter than the paper's fog. Concealment is uReveal's job now;
-            // this only has to sell distance, and at 0.024 the whole drive-in
-            // happened behind a veil — the dial never earned its contrast
-            // until the camera was practically against it.
-            uFogDensity: { value: 0.016 },
-            uDial: { value: 0 },
-            uSide: { value: side },
-            uHalf: { value: new THREE.Vector2(DOOR_W / 2, DOOR_H / 2) },
-            uReveal: { value: 0 },
-          },
-        });
-
-      const doorMatL = mkDoor(1);
-      const doorMatR = mkDoor(-1);
-      const doorL = new THREE.Mesh(doorGeo, doorMatL);
-      const doorR = new THREE.Mesh(doorGeo, doorMatR);
-      doorL.position.set(-(DOOR_W / 2 + SEAM / 2), 0, DOOR_Z);
-      doorR.position.set(DOOR_W / 2 + SEAM / 2, 0, DOOR_Z);
-      scene.add(doorL, doorR);
-
       /* ---------- resize ---------- */
       let portrait = false;
       const resize = () => {
@@ -717,7 +587,7 @@ export default function Assembly({
         else eased += (target - eased) * Math.min(1, dt * 4.0);
         const p = eased;
         const sh = THREE.MathUtils.clamp(shatterRef.current ?? 0, 0, 1);
-        const va = THREE.MathUtils.clamp(vaultRef.current ?? 0, 0, 1);
+        const en = THREE.MathUtils.clamp(enterRef.current ?? 0, 0, 1);
         const sp = THREE.MathUtils.clamp(scrollRef.current ?? 0, 0, 1);
 
         mat.uniforms.uProgress.value = p;
@@ -725,38 +595,13 @@ export default function Assembly({
         mat.uniforms.uTime.value = t;
         mat.uniforms.uLoosen.value = sp;
 
-        // the unlock: the dial spins through the detonation and keeps
-        // turning as the doors part
-        const dial = sh * 1.9 + va * 2.6;
-        doorMatL.uniforms.uDial.value = dial;
-        doorMatR.uniforms.uDial.value = dial;
-
-        // the detonation discloses the vault; by the time the doors are
-        // parting it is fully material
-        const reveal = THREE.MathUtils.clamp(sh * 1.1 + va * 0.5, 0, 1);
-        doorMatL.uniforms.uReveal.value = reveal;
-        doorMatR.uniforms.uReveal.value = reveal;
-
-        // The doors part on the tail of the vault phase — the dial gets the
-        // head, so the sequence reads unlock THEN open. The travel is tuned
-        // against the camera's own advance: part too early or too far and
-        // the slabs leave the frustum while the camera is still metres out,
-        // and the drive-through happens into empty porcelain instead of
-        // through a doorway.
-        const open = easeInOut(
-          THREE.MathUtils.clamp((va - 0.35) / 0.65, 0, 1)
-        );
-        const slide = SEAM / 2 + DOOR_W / 2 + open * DOOR_W * 0.62;
-        doorL.position.x = -slide;
-        doorR.position.x = slide;
-
         ptr.x += (ptr.tx - ptr.x) * 0.05;
         ptr.y += (ptr.ty - ptr.y) * 0.05;
 
         // THE CAMERA IS THE NARRATOR. It rests square-on to the word, takes
-        // one hard knock as the word detonates, and then DRIVES — through
-        // the debris field, at the doors, and through the opening into
-        // porcelain light. One continuous move, never cut.
+        // one hard knock as the word detonates, and then DRIVES — forward
+        // through the debris field into clear porcelain, while the page
+        // scales up to meet it in the DOM. One continuous move, never cut.
         const e = 1 - Math.pow(1 - p, 2.1);
         const fit = portrait ? FIT_PORTRAIT : FIT_LANDSCAPE;
         const restD =
@@ -764,33 +609,32 @@ export default function Assembly({
         const startD = restD * 1.5;
         const baseD = startD + (restD - startD) * e;
 
-        const vaultE = easeInOut(va);
-        const throughZ = DOOR_Z - 12;
+        const enterE = easeInOut(en);
         // the shatter itself shoves the camera forward a little — impact
         const camZ =
-          (baseD - sh * restD * 0.14) * (1 - vaultE) + throughZ * vaultE;
+          (baseD - sh * restD * 0.14) * (1 - enterE) + THROUGH_Z * enterE;
 
         // the knock: a decaying shake that peaks just after detonation.
         // Decoration, so reduced motion drops it entirely.
-        const knock = reduced ? 0 : Math.sin(sh * Math.PI) * (1 - va) * 0.5;
+        const knock = reduced ? 0 : Math.sin(sh * Math.PI) * (1 - en) * 0.5;
         const shakeX = Math.sin(t * 47.0) * knock * 0.4;
         const shakeY = Math.cos(t * 61.0) * knock * 0.3;
 
         camera.position.set(
-          ptr.x * (2.6 - e * 2.0) * (1 - vaultE) + shakeX,
-          (1 - e) * 5.0 - ptr.y * (2.2 - e * 1.6) * (1 - vaultE) + shakeY,
+          ptr.x * (2.6 - e * 2.0) * (1 - enterE) + shakeX,
+          (1 - e) * 5.0 - ptr.y * (2.2 - e * 1.6) * (1 - enterE) + shakeY,
           camZ
         );
 
-        const visH = 2 * Math.max(camZ - DOOR_Z, 4) * Math.tan(HALF_FOV);
+        const visH = 2 * Math.max(camZ, 6) * Math.tan(HALF_FOV);
         const drop = portrait ? DROP_PORTRAIT : DROP_LANDSCAPE;
         const restLookY = (1 - e) * 1.4 + e * visH * drop;
-        // through the vault phase the camera stops looking AT the word's
-        // position and looks AHEAD, or the view would flip as it passes it
+        // through the entry the camera stops looking AT the word's position
+        // and looks AHEAD, or the view would flip as it passes it
         camera.lookAt(
-          camera.position.x * 0.2 * vaultE,
-          restLookY * (1 - vaultE),
-          vaultE * (camZ - 24)
+          camera.position.x * 0.2 * enterE,
+          restLookY * (1 - enterE),
+          enterE * (camZ - 24)
         );
 
         renderer.render(scene, camera);
@@ -806,9 +650,6 @@ export default function Assembly({
         plane.dispose();
         geo.dispose();
         mat.dispose();
-        doorGeo.dispose();
-        doorMatL.dispose();
-        doorMatR.dispose();
         wordTex?.dispose();
         renderer.dispose();
         renderer.domElement.remove();
@@ -824,7 +665,7 @@ export default function Assembly({
       // cancellable tick lets the remount win.
       setTimeout(() => teardown?.(), 0);
     };
-  }, [assembleRef, shatterRef, vaultRef, scrollRef]);
+  }, [assembleRef, shatterRef, enterRef, scrollRef]);
 
   return (
     // absolute, not fixed: this lives inside the Stage's fixed host
