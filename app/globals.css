@@ -45,27 +45,57 @@ body {
 }
 
 /*
- * Type. One family, committed contrast: Archivo variable driven across BOTH
- * axes. Display is set wide (wdth ~122) and heavy; body sits at normal width
- * and regular. Width is the differentiator, not a second typeface.
+ * Type — two voices that argue.
+ *
+ * SYSTEM (Helvetica Neue → Archivo): reports. Display is set large and TIGHT
+ * — the whole expression is in the tracking, not in a width axis. Helvetica
+ * ignores font-variation-settings; the wdth values below only bite on the
+ * Archivo fallback, where they keep the fallback close to Helvetica's
+ * proportions rather than letting it read as a different design.
+ *
+ * HUMAN (Fraunces): explains. Three appearances only — the statement, the
+ * hero's plain account, and the plain-English definitions.
  */
 .wide {
-  font-variation-settings: "wdth" 122, "wght" 700;
-  letter-spacing: -0.035em;
+  font-weight: 700;
+  font-variation-settings: "wdth" 108, "wght" 700;
+  letter-spacing: -0.042em;
   line-height: 0.87;
   text-wrap: balance;
 }
 
 .wide-thin {
-  font-variation-settings: "wdth" 118, "wght" 300;
-  letter-spacing: -0.02em;
+  font-weight: 300;
+  font-variation-settings: "wdth" 106, "wght" 300;
+  letter-spacing: -0.028em;
   line-height: 0.95;
   text-wrap: balance;
 }
 
+/* pinned to Archivo — the narrow nav chips ARE the width axis */
 .narrow {
+  font-family: var(--font-archivo), sans-serif;
   font-variation-settings: "wdth" 76, "wght" 600;
   letter-spacing: 0.015em;
+}
+
+/* the human voice, display size — the statement, and nothing else on the page */
+.human-display {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-variation-settings: "SOFT" 28, "WONK" 1, "opsz" 120;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+/* the human voice, reading size — plain-English explanation */
+.human-body {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-variation-settings: "SOFT" 22, "WONK" 0, "opsz" 14;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.52;
 }
 
 /* data readouts only — never as section grammar */

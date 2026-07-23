@@ -5,7 +5,7 @@ import Entry from "@/components/Entry";
 import Cinematic from "@/components/Cinematic";
 import Marquee from "@/components/Marquee";
 import Figure from "@/components/Figure";
-import { BRAND, DRENCH, RESOLUTIONS } from "@/lib/content";
+import { BRAND, DRENCH, PLAIN, RESOLUTIONS } from "@/lib/content";
 
 export default function Home() {
   return (
@@ -39,6 +39,43 @@ export default function Home() {
           </div>
           <div className="mx-auto max-w-[110rem] px-5 md:px-10">
             <p className="max-w-lg text-[15px] leading-relaxed text-porcelain">{DRENCH.note}</p>
+          </div>
+        </section>
+
+        {/* ── in plain english ── placed directly after the drench on purpose:
+            the band above is a wall of compliance vocabulary, and this is
+            where a reader who isn't a CA gets it handed back to them in
+            sentences. Definition list, not a feature grid. */}
+        <section className="border-t rule bg-porcelain px-5 py-[15vh] md:px-10">
+          <div className="mx-auto grid max-w-[110rem] gap-12 md:grid-cols-12 md:gap-16">
+            <div className="md:col-span-4">
+              <p className="readout text-vermilion">{PLAIN.eyebrow}</p>
+              <h2 className="wide mt-5 text-d3">{PLAIN.title}</h2>
+              <p className="mt-6 max-w-sm text-[15px] leading-relaxed text-graphite">
+                {PLAIN.intro}
+              </p>
+            </div>
+
+            <div className="md:col-span-7 md:col-start-6">
+              <dl>
+                {PLAIN.terms.map((t) => (
+                  <div
+                    key={t.term}
+                    className="grid gap-2 border-t rule py-8 md:grid-cols-12 md:gap-8"
+                  >
+                    <dt className="narrow text-[13px] uppercase tracking-[0.1em] text-ink md:col-span-4">
+                      {t.term}
+                    </dt>
+                    <dd className="human-body text-[16px] text-graphite md:col-span-8">
+                      {t.meaning}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="border-t rule pt-8 text-[15px] leading-relaxed text-ink">
+                {PLAIN.close}
+              </p>
+            </div>
           </div>
         </section>
 

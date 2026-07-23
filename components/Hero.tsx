@@ -98,7 +98,7 @@ export default function Hero() {
           className="mt-auto grid gap-4 md:grid-cols-12 md:items-end md:gap-6"
         >
           <div className={`${GLASS} px-6 py-6 md:col-span-6 md:px-7 md:py-7`}>
-            <p className="text-[15px] leading-relaxed text-graphite md:text-base">
+            <p className="human-body text-[15px] text-graphite md:text-[16.5px]">
               {OPEN.under}
             </p>
             <div className="mt-6 flex items-center gap-6">
