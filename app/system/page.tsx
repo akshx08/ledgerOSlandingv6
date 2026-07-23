@@ -33,7 +33,7 @@ export default function SystemPage() {
         </div>
 
         {/* the layer we haven't built — stated plainly, not dressed as shipped */}
-        <section className="border-t rule bg-ink px-5 py-[14vh] text-porcelain md:px-10">
+        <section className="border-t rule bg-ink px-5 py-28 text-porcelain md:py-36 md:px-10">
           <div className="grid gap-10 md:grid-cols-12">
             <div className="md:col-span-6">
               <span className="readout text-vermilion">In development · not shipped</span>
@@ -55,7 +55,7 @@ export default function SystemPage() {
         </section>
 
         {/* roadmap as a ledger, not a card rail */}
-        <section className="px-5 py-[14vh] md:px-10">
+        <section className="px-5 py-28 md:px-10 md:py-36">
           <Rise>
             <h2 className="wide max-w-[18ch] text-d2">{ROADMAP.title}</h2>
           </Rise>

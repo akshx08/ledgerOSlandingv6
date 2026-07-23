@@ -46,7 +46,7 @@ export default function Home() {
             the band above is a wall of compliance vocabulary, and this is
             where a reader who isn't a CA gets it handed back to them in
             sentences. Definition list, not a feature grid. */}
-        <section className="border-t rule bg-porcelain px-5 py-[15vh] md:px-10">
+        <section className="border-t rule bg-porcelain px-5 py-28 md:px-10 md:py-36">
           <div className="mx-auto grid max-w-[110rem] gap-12 md:grid-cols-12 md:gap-16">
             <div className="md:col-span-4">
               <p className="readout text-vermilion">{PLAIN.eyebrow}</p>
@@ -80,11 +80,11 @@ export default function Home() {
         </section>
 
         {/* ── resolutions ── free-floating figures at three depths */}
-        <section className="bg-porcelain px-5 py-[16vh] md:px-10">
+        <section className="bg-porcelain px-5 py-28 md:px-10 md:py-36">
           {/* the plate crosses the page: right, left, right — placed by
               explicit grid columns rather than a direction flip, which fights
               any col-start you set alongside it */}
-          <div className="space-y-[14vh]">
+          <div className="space-y-24 md:space-y-28">
             {RESOLUTIONS.map((r, i) => {
               const plateLeft = i % 2 === 1;
               return (
@@ -114,7 +114,7 @@ export default function Home() {
         </section>
 
         {/* ── the hand-off ── */}
-        <section className="border-t rule bg-porcelain px-5 py-[14vh] md:px-10">
+        <section className="border-t rule bg-porcelain px-5 py-24 md:px-10 md:py-28">
           <div className="flex flex-col items-start justify-between gap-10 md:flex-row md:items-end">
             <h2 className="wide max-w-[14ch] text-d2">Seats are few.</h2>
             <Link
