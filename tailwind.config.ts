@@ -13,7 +13,11 @@ const config: Config = {
         edge: "oklch(var(--edge) / <alpha-value>)",
       },
       fontFamily: {
-        sans: ["var(--font-archivo)", "sans-serif"],
+        // Helvetica Neue resolves locally on Apple hardware; Archivo is the
+        // loaded fallback everywhere else and carries the width axis.
+        sans: ['"Helvetica Neue"', "var(--font-archivo)", "Helvetica", "Arial", "sans-serif"],
+        // the human voice — used in three places, never as page furniture
+        human: ["var(--font-fraunces)", "Georgia", "serif"],
         mono: ["var(--font-mono)", "monospace"],
       },
       fontSize: {

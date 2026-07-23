@@ -86,7 +86,7 @@ export default function Cinematic() {
         style={{ transformStyle: "preserve-3d", opacity: 0 }}
       >
         <div className={`${GLASS} px-6 py-10 md:px-12 md:py-14`}>
-          <h2 className="wide-thin mx-auto max-w-[22ch] text-d2">
+          <h2 className="human-display mx-auto max-w-[20ch] text-d2">
             {STATEMENT.big}
           </h2>
           <p className="mx-auto mt-8 max-w-xl text-[15px] leading-relaxed text-graphite">

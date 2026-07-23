@@ -1,13 +1,11 @@
 /**
  * LedgerOS — all copy, one file. JSX never hard-codes content.
  *
- * Business facts carried over verbatim in substance from the product repo
- * (CLAUDE.md + README.md, synced 2026-07-23): the deterministic no-LLM
- * parse, the client × month workbench, live recon/registers/exports, the
- * business portal, the prep-not-filing boundary. The VOICE is unchanged —
- * terse, imperative, machined. Nothing here claims a capability that isn't
- * built; the channel wave (email scraper, WhatsApp agent, CRM) and the
- * knowledge layer are marked unbuilt everywhere they appear.
+ * Written to be read by someone who has never filed a GST return. The rule
+ * throughout: the human sentence comes first, the compliance term second, as
+ * evidence. Never a code word doing the work of an explanation. Every claim
+ * matches the product repo (digi0/ledgerOS → CLAUDE.md); anything unbuilt is
+ * labelled unbuilt where it appears.
  */
 
 export const BRAND = {
@@ -30,22 +28,55 @@ export const BOOT = {
 };
 
 export const OPEN = {
-  /* the cold open — set bottom-left, not centered */
   kicker: "Entering pilot",
-  line: ["Point it", "at the", "chaos."],
+  line: ["The month's", "paperwork,", "ready to file."],
   under:
-    "Your clients send their financial lives in fragments — invoices over email, statements as scans, challans by hand. LedgerOS is the aperture it all passes through: sorted, matched to a client, reconciled, prepped to file.",
+    "Every business in India owes the government a monthly account of what it bought and what it sold. Most hand that job to a chartered accountant, along with a pile — invoices, bank statements, challans, photographs of receipts. LedgerOS reads the pile, files each page to the right client, checks it against the government's own records, and hands the accountant a return that's ready to submit.",
   cue: "Scroll to open",
 };
 
+/**
+ * The plain-English block. This is the page's load-bearing section for a
+ * reader who isn't a CA: the four terms the rest of the site can't avoid,
+ * each translated once, in the open, before it is used as shorthand.
+ */
+export const PLAIN = {
+  eyebrow: "In plain English",
+  title: "What the work actually is",
+  intro:
+    "Compliance has its own vocabulary, and it hides a job that is not complicated — only relentless. Four words carry most of it.",
+  terms: [
+    {
+      term: "A return",
+      meaning:
+        "The monthly statement a business files with the government: everything it sold, everything it bought, and the tax on both. Late or wrong is expensive.",
+    },
+    {
+      term: "Reconciliation",
+      meaning:
+        "The government already holds its own copy of what your suppliers say they sold you. Reconciling means checking your client's books against that copy, line by line, until the two agree.",
+    },
+    {
+      term: "Input tax credit",
+      meaning:
+        "Tax a business already paid on its purchases, which it subtracts from what it owes. But only if the paperwork matches the government's copy. When it doesn't, that is real money gone.",
+    },
+    {
+      term: "Filing",
+      meaning:
+        "Submitting the finished return at the government portal, with a chartered accountant's name against it. LedgerOS never touches this step.",
+    },
+  ],
+  close:
+    "Everything before that last word is what LedgerOS does. The accountant keeps the judgement, the signature, and the filing.",
+};
+
 export const STATEMENT = {
-  /* one enormous sentence, cursor-reactive weight */
   big: "Nobody was ever promoted for sorting the post.",
-  body: "An articled assistant loses the first ninety minutes of every day to triage — opening attachments, working out whose they are, keying numbers into Tally. That work is real. It is also the least valuable thing in the building. LedgerOS does the sorting, and preps everything the filing needs. The CA files.",
+  body: "The first ninety minutes of an articled assistant's day go to triage — opening attachments, working out whose they are, keying the numbers into Tally by hand. It is careful work, and it is the least valuable thing in the building. LedgerOS does it overnight, and it doesn't get bored on page four hundred.",
 };
 
 export const DRENCH = {
-  /* full-bleed vermilion band — a marquee of what it reads */
   lead: "It already reads",
   types: [
     "Tax invoices",
@@ -55,26 +86,26 @@ export const DRENCH = {
     "Form 26AS",
     "TDS challans",
   ],
-  note: "Typed with a confidence score. Low confidence is flagged, never quietly guessed.",
+  note: "The last three are government records — what your suppliers reported selling you, and the tax already deducted in your client's name. Those are the ones worth checking your books against, and the ones nobody has time to check by hand.",
 };
 
 export const RESOLUTIONS = [
   {
     id: "sorted",
     title: "Sorted before you sit down",
-    body: "Open the inbox to a sorted list. Then the workbench: one client, one month — documents in, matched, confirmed, input tax — with recon, registers and exports beside the numbers that decide if you need them.",
+    body: "Every page arrives typed, matched to a client, and stacked newest first. Then the workbench: one client, one month, on one screen — what came in, what's matched, what's confirmed, what the client can claim back. The reconciliations and exports sit right beside those numbers, because the numbers are what tell you whether you need them.",
     figure: "inbox",
   },
   {
     id: "grounded",
     title: "Answers that carry receipts",
-    body: "Ask in plain language. Every claim points at a source document. No source, no answer — and it never produces a number of its own.",
+    body: "Ask in plain language — what's still open for this client, what's due this week. Every answer points at the document it came from. If it can't cite one, it doesn't answer, and it never invents a figure of its own.",
     figure: "copilot",
   },
   {
     id: "yours",
     title: "Corrections that stick",
-    body: "Wrong client, wrong type, wrong value — fix it once. Even a full re-parse keeps every field a human corrected. The system takes the shape of your practice, not the other way round.",
+    body: "Wrong client, wrong type, wrong value — fix it once. Re-read the same document a month later and every correction a human made is still there. The system takes the shape of your practice, not the other way round.",
     figure: "override",
   },
 ];
@@ -82,43 +113,43 @@ export const RESOLUTIONS = [
 export const STAGES = [
   {
     n: "01",
-    key: "intake",
-    name: "Intake",
+    key: "arrives",
+    name: "It arrives",
     spec: "Upload today · channels next",
-    line: "Drop in what clients send. The email scraper and WhatsApp agent are the next wave — intake that meets clients where they already are.",
-    detail: "No new habits asked of your clients. Ever.",
+    line: "Whatever the client sent, however they sent it. Today that means dropping files in; the email reader and WhatsApp assistant are what we're building next, so the paperwork lands here without anyone forwarding anything.",
+    detail: "Nothing new asked of your clients. That is the whole point.",
   },
   {
     n: "02",
-    key: "extract",
-    name: "Extract",
-    spec: "Deterministic · no LLM",
-    line: "Fields are read off the labels an invoice legally must carry — never inferred from position, never guessed by a model. Regex and an India knowledge base, nothing else near a number.",
-    detail: "Amounts, dates, GSTIN, PAN, TDS sections — whatever the type carries.",
+    key: "read",
+    name: "It gets read",
+    spec: "Deterministic · no AI on numbers",
+    line: "The figures are lifted off the page by rule, not by guess — read off the labels an invoice is legally required to carry. No language model is anywhere near a number, because a model that is confidently wrong about ₹4,18,200 is worse than no model at all.",
+    detail: "Amounts, dates, GSTIN, PAN, tax sections — whatever that kind of document carries.",
   },
   {
     n: "03",
-    key: "classify",
-    name: "Classify",
-    spec: "Typed + scored",
-    line: "Each document is typed — invoice, bank statement, GST return, 26AS — by a provider that scores its own confidence.",
-    detail: "Below threshold it is flagged for a human, not quietly filed.",
-  },
-  {
-    n: "04",
-    key: "match",
-    name: "Match",
-    spec: "GSTIN · PAN · name",
-    line: "Matched to the client on hard identifiers first, name second. Unmatched is a visible state with a one-click fix.",
+    key: "matched",
+    name: "It finds its client",
+    spec: "Tax ID first, name second",
+    line: "Matched on hard identifiers before names, because two firms can share a name and no two share a GSTIN. When it can't be sure, the page sits in plain sight marked unmatched, one click from being assigned.",
     detail: "A wrong match is worse than no match. It behaves accordingly.",
   },
   {
+    n: "04",
+    key: "checked",
+    name: "It gets checked",
+    spec: "Against the government's own copy",
+    line: "Your client's books, set against what the government already holds — supplier by supplier, line by line. What's missing, what doesn't agree, and what tax credit is at risk if nobody chases it. This is the step that finds money.",
+    detail: "Differences are surfaced and named, never quietly averaged away.",
+  },
+  {
     n: "05",
-    key: "prep",
-    name: "Prep",
-    spec: "Recon · registers · exports",
-    line: "Reconciled against GSTR-2B and Form 26AS, built into registers, exported as portal-ready GSTR-1 JSON and Tally XML. LedgerOS preps the filing. You file it.",
-    detail: "Prep, not filing, is the product. Ambiguous documents are refused, not averaged in.",
+    key: "ready",
+    name: "It's ready to file",
+    spec: "Portal JSON · Tally XML",
+    line: "Out comes the return in the format the government portal accepts, and the vouchers in the format Tally accepts. Nothing is retyped, because nothing was ever typed twice.",
+    detail: "LedgerOS preps the filing. The chartered accountant files it. That line does not move.",
   },
 ];
 
@@ -167,36 +198,36 @@ export const COPILOT = {
   rules: [
     ["Grounded, or silent", "If a claim can't cite a document, it doesn't get made."],
     ["Reads, never acts", "It retrieves and summarises. It does not file, reply, or alter a record."],
-    ["Your documents only", "It answers about the practice in front of you. Not general trivia."],
+    ["Your practice only", "It answers about the clients in front of you. Not general trivia."],
   ],
 };
 
 export const KNOWLEDGE = {
   title: "The layer we haven't built yet",
-  body: "A maintained index of Indian accounting rules — GST, TDS rates, ITR forms, ICAI and Income Tax notifications — so the copilot can cross-check against the law as it stands rather than as a model remembers it. It is in development, not shipped. Until it lands the copilot stays deliberately narrow: your parsed documents, nothing else.",
+  body: "A maintained index of Indian tax law — GST rules, TDS rates, ITR forms, ICAI and Income Tax notifications — so the assistant can check an answer against the law as it stands today rather than as a model half-remembers it. It is in development, not shipped. Until it lands, the assistant stays deliberately narrow: your documents, nothing else.",
   sources: ["GST rules", "TDS rates", "ITR forms", "ICAI notifications", "Income Tax notifications"],
 };
 
 export const ROADMAP = {
-  title: "The workbench is real. The next wave is channels.",
-  body: "An invoice born inside LedgerOS needs no parser at all — a firm's client raises it in the portal and it lands in the books, structured from the first keystroke. Paper is the legacy input. The next modules go to where it still arrives.",
+  title: "The desk is built. Next we go to where the paper is.",
+  body: "An invoice raised inside LedgerOS never has to be read at all — a client raises it in their own portal and it lands in the firm's books already structured, already correct. Paper is the legacy input. The next modules go and meet it where it still arrives: the inbox, and the phone.",
   items: [
-    { n: "01", name: "Document inbox + deterministic parse", state: "Live" },
-    { n: "02", name: "Client × month workbench", state: "Live" },
-    { n: "03", name: "GST reconciliation + GSTR-1", state: "Live" },
-    { n: "04", name: "TDS / 26AS + registers · Tally export", state: "Live" },
-    { n: "05", name: "Business portal — clients raise invoices", state: "Live" },
-    { n: "06", name: "Email scraper · WhatsApp agent", state: "Next" },
+    { n: "01", name: "Sorted inbox · figures read by rule", state: "Live" },
+    { n: "02", name: "One client, one month — the workbench", state: "Live" },
+    { n: "03", name: "Checked against government records", state: "Live" },
+    { n: "04", name: "Returns out · Tally out", state: "Live" },
+    { n: "05", name: "Clients raise their own invoices", state: "Live" },
+    { n: "06", name: "Email reader · WhatsApp assistant", state: "Next" },
     { n: "07", name: "Client dashboards · practice CRM", state: "Planned" },
   ],
 };
 
 export const ACCESS = {
   big: ["Open it", "on your", "practice."],
-  body: "LedgerOS is entering pilot with Chartered Accountant firms in India. Pilot firms run it against their real document flow, keep every hour it saves, and set what gets built next. Seats are deliberately few.",
+  body: "LedgerOS is entering pilot with chartered accountant firms in India. Pilot firms run it against their real month — real clients, real paperwork, real deadlines — keep every hour it saves, and decide what gets built next. Seats are deliberately few, because we answer every one of them personally.",
   terms: [
-    ["Real flow", "It runs on your documents and your clients, not a demo set."],
-    ["Direct line", "You talk to the people building it. Feedback lands in the next build."],
+    ["Your real month", "It runs on your clients and your documents, not a demo set."],
+    ["Direct line", "You talk to the people building it. What you say lands in the next build."],
     ["No lock-in", "It's your data. Leave whenever, and take it with you."],
   ],
   form: {
@@ -223,6 +254,6 @@ export const ACCESS = {
 };
 
 export const FOOT = {
-  line: "Built for Chartered Accountant firms in India.",
+  line: "Built for chartered accountant firms in India.",
   meta: "MMXXVI",
 };

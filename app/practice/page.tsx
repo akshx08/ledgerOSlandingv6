@@ -17,22 +17,22 @@ const HOURS = [
   {
     t: "18:40",
     title: "The day's paper lands",
-    body: "Invoices, statements, challans — whatever clients sent, dropped into LedgerOS. The email scraper and WhatsApp agent on the roadmap exist to make this step vanish; the sorting below is already real.",
+    body: "Forty-odd pages from nine clients — invoices, bank statements, a notice, three photographs of receipts taken at an angle. On a normal evening this is tomorrow's problem. It goes into LedgerOS instead.",
   },
   {
     t: "02:15",
-    title: "The pipeline runs against it",
-    body: "Parsed deterministically — fields read off the labels the law requires, typed with a confidence score, matched to a client on GSTIN and PAN, filed with a status. Anything it isn't sure about is flagged rather than guessed.",
+    title: "It gets read, matched and checked",
+    body: "Figures lifted off each page by rule, not by guess. Each page matched to a client on its tax ID. Then the month set against the government's own record of it, so anything missing or disagreeing is already found by morning.",
   },
   {
     t: "09:00",
     title: "The assistant opens a sorted list",
-    body: "Newest first. What it is, whose it is, the amount, the date it's due. The ninety minutes of triage is already spent, and it wasn't spent by a person.",
+    body: "Newest first. What it is, whose it is, the amount, when it's due — and four things flagged as needing a human, out of forty. The ninety minutes of triage is already spent, and it wasn't spent by a person.",
   },
   {
     t: "09:04",
-    title: "Work, instead of sorting",
-    body: "Read the PDF in place, correct anything the pipeline got wrong, act, mark handled. Ask what's still open and get an answer with the document attached to it.",
+    title: "Judgement, instead of sorting",
+    body: "Read the page in place, correct the four, chase the supplier whose invoice never showed up — the one costing the client ₹18,000 in credit. Then export the return and file it. That last part is still yours, and always will be.",
   },
 ];
 
