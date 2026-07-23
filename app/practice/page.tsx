@@ -72,7 +72,7 @@ export default function PracticePage() {
         </section>
 
         {/* the surfaces, full width */}
-        <section className="bg-porcelain px-5 py-[14vh] md:px-10">
+        <section className="bg-porcelain px-5 py-28 md:px-10 md:py-36">
           <Rise>
             <h2 className="wide max-w-[16ch] text-d2">What it puts in front of them</h2>
           </Rise>
@@ -101,7 +101,7 @@ export default function PracticePage() {
           <p className="readout mt-14 text-graphite">{INBOX_NOTE}</p>
         </section>
 
-        <section className="border-t rule bg-porcelain px-5 py-[12vh] md:px-10">
+        <section className="border-t rule bg-porcelain px-5 py-24 md:px-10 md:py-28">
           <Link
             href="/access"
             className="group inline-flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b-2 border-ink pb-3"
