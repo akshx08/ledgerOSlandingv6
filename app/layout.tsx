@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Archivo, Fraunces, Martian_Mono } from "next/font/google";
 import "./globals.css";
 import Dock from "@/components/Dock";
-import Instrument from "@/components/Instrument";
 import Smooth from "@/components/Smooth";
 import Foot from "@/components/Foot";
 import { BRAND } from "@/lib/content";
@@ -59,9 +58,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Boot is gone. The calibration curtain existed to cover a hero that
             had nothing to say at t=0; the field now opens on its own disorder
             and resolves in front of the visitor, and a curtain in front of
-            that is a curtain in front of a curtain. */}
+            that is a curtain in front of a curtain.
+
+            The custom cursor is gone too: it set `cursor: none` on everything,
+            and a site you are trying to find your way around is the wrong
+            place to hide the pointer. */}
         <Smooth />
-        <Instrument />
         {children}
         <Foot />
         <Dock />
