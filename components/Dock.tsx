@@ -13,13 +13,52 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BRAND, ROUTES } from "@/lib/content";
 
 export default function Dock() {
   const pathname = usePathname();
   const listRef = useRef<HTMLUListElement>(null);
   const plateRef = useRef<HTMLSpanElement>(null);
+  const onHome = pathname === "/";
+  // which in-page section is currently being read (home only)
+  const [section, setSection] = useState<string | null>(null);
+
+  /*
+   * Scroll-spy. The nav points at sections of one page now, so it has to say
+   * where you ARE — a nav that never changes while you scroll a long page is
+   * decoration. Observed rather than computed on scroll so it costs nothing.
+   */
+  useEffect(() => {
+    if (!onHome) {
+      setSection(null);
+      return;
+    }
+    const ids = ROUTES.map((r) => r.id).filter((v): v is string => !!v);
+    const seen = new Map<string, number>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => seen.set(e.target.id, e.intersectionRatio));
+        let best: string | null = null;
+        let bestRatio = 0;
+        seen.forEach((ratio, id) => {
+          if (ratio > bestRatio) {
+            bestRatio = ratio;
+            best = id;
+          }
+        });
+        // Above the first section (in the hero) nothing is active, which is
+        // correct: you haven't arrived anywhere yet.
+        setSection(bestRatio > 0.08 ? best : null);
+      },
+      { threshold: [0, 0.08, 0.25, 0.5, 0.75, 1] }
+    );
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      if (el) io.observe(el);
+    }
+    return () => io.disconnect();
+  }, [onHome]);
 
   // slide the plate under the active route; measured, so it survives font
   // loading and any width change
@@ -29,7 +68,10 @@ export default function Dock() {
       const plate = plateRef.current;
       if (!list || !plate) return;
       const active = list.querySelector<HTMLElement>('[data-active="true"]');
-      if (!active) return;
+      if (!active) {
+        plate.style.width = "0px";
+        return;
+      }
       plate.style.width = `${active.offsetWidth}px`;
       plate.style.transform = `translateX(${active.offsetLeft}px)`;
     };
@@ -38,7 +80,7 @@ export default function Dock() {
     if (listRef.current) ro.observe(listRef.current);
     if ("fonts" in document) void document.fonts.ready.then(move);
     return () => ro.disconnect();
-  }, [pathname]);
+  }, [pathname, section]);
 
   // /access is drenched, so the wordmark inverts there. A single mid-grey
   // that "works on both" fails on both; the surface decides the ink.
@@ -75,7 +117,9 @@ export default function Dock() {
             style={{ width: 0 }}
           />
           {ROUTES.map((r) => {
-            const active = pathname === r.href;
+            // an anchor is active when its section is the one being read;
+            // a real route is active when you are on it
+            const active = r.id ? onHome && section === r.id : pathname === r.href;
             return (
               <li key={r.href} data-active={active} className="relative">
                 <Link

@@ -116,13 +116,8 @@ body {
   border-radius: 1px;
 }
 
-/* the instrument cursor replaces the pointer on fine-pointer devices only */
-@media (hover: hover) and (pointer: fine) {
-  html.instrument,
-  html.instrument * {
-    cursor: none !important;
-  }
-}
+/* The instrument cursor is gone — it set `cursor: none` on every element,
+   which is the wrong trade on a page whose job is to be navigated. */
 
 @keyframes drift {
   0%,

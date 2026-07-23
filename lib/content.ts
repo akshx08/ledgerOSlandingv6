@@ -15,11 +15,56 @@ export const BRAND = {
   contact: "akshx08@gmail.com",
 };
 
+/**
+ * Two destinations, not four. System and Practice were separate routes for
+ * what is one continuous argument, so they are now sections of the home page
+ * and these are anchors into it. `id` null means a real route.
+ */
 export const ROUTES = [
-  { href: "/", label: "Aperture", index: "00" },
-  { href: "/system", label: "System", index: "01" },
-  { href: "/practice", label: "Practice", index: "02" },
-  { href: "/access", label: "Access", index: "03" },
+  { href: "/#overview", id: "overview", label: "Overview", index: "00" },
+  { href: "/#plain", id: "plain", label: "Plain English", index: "01" },
+  { href: "/#how", id: "how", label: "How it works", index: "02" },
+  { href: "/access", id: null, label: "Access", index: "03" },
+];
+
+/** Section headers for the single-page story. */
+export const HEADINGS = {
+  how: {
+    eyebrow: "Five steps · overnight",
+    title: "What happens while you sleep",
+  },
+  morning: {
+    eyebrow: "One morning · one assistant",
+    title: "The ninety minutes you get back",
+  },
+  state: {
+    eyebrow: "Built · building · planned",
+    title: "Where it actually stands",
+  },
+};
+
+/** A morning at the firm — four times, in order. */
+export const HOURS = [
+  {
+    t: "18:40",
+    title: "The day's paper lands",
+    body: "Forty-odd pages from nine clients — invoices, bank statements, a notice, three photographs of receipts taken at an angle. On a normal evening this is tomorrow's problem. It goes into LedgerOS instead.",
+  },
+  {
+    t: "02:15",
+    title: "It gets read, matched and checked",
+    body: "Figures lifted off each page by rule, not by guess. Each page matched to a client on its tax ID. Then the month set against the government's own record of it, so anything missing or disagreeing is already found by morning.",
+  },
+  {
+    t: "09:00",
+    title: "The assistant opens a sorted list",
+    body: "Newest first. What it is, whose it is, the amount, when it's due — and four things flagged as needing a human, out of forty. The ninety minutes of triage is already spent, and it wasn't spent by a person.",
+  },
+  {
+    t: "09:04",
+    title: "Judgement, instead of sorting",
+    body: "Read the page in place, correct the four, chase the supplier whose invoice never showed up — the one costing the client ₹18,000 in credit. Then export the return and file it. That last part is still yours, and always will be.",
+  },
 ];
 
 export const BOOT = {
@@ -88,27 +133,6 @@ export const DRENCH = {
   ],
   note: "The last three are government records — what your suppliers reported selling you, and the tax already deducted in your client's name. Those are the ones worth checking your books against, and the ones nobody has time to check by hand.",
 };
-
-export const RESOLUTIONS = [
-  {
-    id: "sorted",
-    title: "Sorted before you sit down",
-    body: "Every page arrives typed, matched to a client, and stacked newest first. Then the workbench: one client, one month, on one screen — what came in, what's matched, what's confirmed, what the client can claim back. The reconciliations and exports sit right beside those numbers, because the numbers are what tell you whether you need them.",
-    figure: "inbox",
-  },
-  {
-    id: "grounded",
-    title: "Answers that carry receipts",
-    body: "Ask in plain language — what's still open for this client, what's due this week. Every answer points at the document it came from. If it can't cite one, it doesn't answer, and it never invents a figure of its own.",
-    figure: "copilot",
-  },
-  {
-    id: "yours",
-    title: "Corrections that stick",
-    body: "Wrong client, wrong type, wrong value — fix it once. Re-read the same document a month later and every correction a human made is still there. The system takes the shape of your practice, not the other way round.",
-    figure: "override",
-  },
-];
 
 export const STAGES = [
   {
@@ -202,12 +226,6 @@ export const COPILOT = {
   ],
 };
 
-export const KNOWLEDGE = {
-  title: "The layer we haven't built yet",
-  body: "A maintained index of Indian tax law — GST rules, TDS rates, ITR forms, ICAI and Income Tax notifications — so the assistant can check an answer against the law as it stands today rather than as a model half-remembers it. It is in development, not shipped. Until it lands, the assistant stays deliberately narrow: your documents, nothing else.",
-  sources: ["GST rules", "TDS rates", "ITR forms", "ICAI notifications", "Income Tax notifications"],
-};
-
 export const ROADMAP = {
   title: "The desk is built. Next we go to where the paper is.",
   body: "An invoice raised inside LedgerOS never has to be read at all — a client raises it in their own portal and it lands in the firm's books already structured, already correct. Paper is the legacy input. The next modules go and meet it where it still arrives: the inbox, and the phone.",
@@ -219,6 +237,7 @@ export const ROADMAP = {
     { n: "05", name: "Clients raise their own invoices", state: "Live" },
     { n: "06", name: "Email reader · WhatsApp assistant", state: "Next" },
     { n: "07", name: "Client dashboards · practice CRM", state: "Planned" },
+    { n: "08", name: "Tax-law knowledge layer for the assistant", state: "Planned" },
   ],
 };
 
