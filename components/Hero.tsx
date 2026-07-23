@@ -70,7 +70,7 @@ export default function Hero() {
     // rising into frame — scaling up through Entry — while the debris is
     // still in the air: the statement must be readable on the shatter's
     // heels, not after a stretch of empty porcelain.
-    <section className="relative h-[132vh]">
+    <section className="relative h-[260vh]">
       <div className="sticky top-0 flex h-[100svh] flex-col justify-between px-4 pb-12 pt-24 md:px-8 md:pb-14 md:pt-28">
         {/* ── top-left: the line ── */}
         <div ref={topRef} className="max-w-[24rem] sm:max-w-[32rem] lg:max-w-[40rem]">

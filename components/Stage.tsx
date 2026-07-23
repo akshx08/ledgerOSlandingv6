@@ -39,28 +39,23 @@ import { useEffect, useRef } from "react";
 import Assembly from "@/components/Assembly";
 import { emit, scrollState, setReady } from "@/lib/stage";
 
-/*
- * The whole choreography was halved (2.45 screens → 1.22). It cost two and a
- * half screens of scrolling to reach the first sentence of the pitch, which
- * is the largest single source of "this page is mostly empty". The beats keep
- * their proportions exactly; only the budget shrank, so the hero still
- * resolves, holds, and detonates — in half the distance.
- */
-
 /** screens of scroll spent resolving chaos → word */
-const ASSEMBLE = 0.67;
+const ASSEMBLE = 1.35;
 /** the word is held from ASSEMBLE until here */
-const HOLD_END = 0.8;
+const HOLD_END = 1.6;
 /** the detonation — short, because violence is short */
-const SHATTER_END = 1.0;
-/** The drive begins while debris is still in the air, and lands FAST. */
-const ENTER_START = 0.85;
-const ENTER_END = 1.12;
+const SHATTER_END = 2.0;
+/** The drive begins while debris is still in the air, and lands FAST.
+ *  The gap between the detonation and the first readable copy is dead time —
+ *  a stretch of empty porcelain teaching the visitor nothing — so the entry
+ *  is compressed to end on the shatter's heels. */
+const ENTER_START = 1.7;
+const ENTER_END = 2.25;
 /** the host releases the frame across this window — by then the camera is
  *  in clear porcelain, so nothing visible actually changes; this only frees
  *  the GPU layer */
-const FADE_START = 1.1;
-const FADE_END = 1.22;
+const FADE_START = 2.2;
+const FADE_END = 2.45;
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const easeInOut = (t: number) =>
