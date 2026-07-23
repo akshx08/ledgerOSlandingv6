@@ -37,9 +37,9 @@ export const HEADINGS = {
     eyebrow: "One morning · one assistant",
     title: "The ninety minutes you get back",
   },
+  // the roadmap section takes its heading from ROADMAP.title
   state: {
     eyebrow: "Built · building · planned",
-    title: "Where it actually stands",
   },
 };
 
