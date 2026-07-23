@@ -9,7 +9,7 @@ import { KNOWLEDGE, ROADMAP } from "@/lib/content";
 export const metadata: Metadata = {
   title: "System — LedgerOS",
   description:
-    "Ingest, extract, classify, match, route. The five stages a forwarded document passes through, and what each one refuses to guess at.",
+    "Intake, extract, classify, match, prep. The five stages a document passes through, what each one refuses to guess at — and why filing stays with the CA.",
 };
 
 export default function SystemPage() {
