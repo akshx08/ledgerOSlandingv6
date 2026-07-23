@@ -30,7 +30,7 @@ const mono = Martian_Mono({
 export const metadata: Metadata = {
   title: `${BRAND.name} — point it at the chaos`,
   description:
-    "LedgerOS is the aperture your clients' documents pass through. Notices, invoices, statements and scans arrive forwarded and come out classified, matched to a client, and filed. By Precedal. Entering pilot with CA firms in India.",
+    "LedgerOS is the aperture a CA practice's documents pass through. Invoices, statements, returns and challans come out classified, matched to a client, reconciled, and prepped to file — LedgerOS preps the filing, the CA files. Entering pilot with CA firms in India.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

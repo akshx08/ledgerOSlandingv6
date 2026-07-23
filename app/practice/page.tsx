@@ -16,13 +16,13 @@ export const metadata: Metadata = {
 const HOURS = [
   {
     t: "18:40",
-    title: "The firm forwards, as it already does",
-    body: "Client mail goes to the LedgerOS address — the same reflex as today. There is no other integration step, and nothing changes on the client's side.",
+    title: "The day's paper lands",
+    body: "Invoices, statements, challans — whatever clients sent, dropped into LedgerOS. The email scraper and WhatsApp agent on the roadmap exist to make this step vanish; the sorting below is already real.",
   },
   {
     t: "02:15",
     title: "The pipeline runs against it",
-    body: "Attachments pulled, OCR'd, typed with a confidence score, matched to a client on GSTIN and PAN, filed with a status. Anything it isn't sure about is flagged rather than guessed.",
+    body: "Parsed deterministically — fields read off the labels the law requires, typed with a confidence score, matched to a client on GSTIN and PAN, filed with a status. Anything it isn't sure about is flagged rather than guessed.",
   },
   {
     t: "09:00",
