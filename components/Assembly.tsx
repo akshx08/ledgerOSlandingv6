@@ -45,9 +45,23 @@ THREE.ColorManagement.enabled = false;
 /* Sampled from the stylesheet's own tokens rather than eyeballed:
  *   --porcelain oklch(0.966 0.006 286) → #f3f3f8
  *   --ink       oklch(0.17  0.019 286) → #0f0e17
- *   --vermilion oklch(0.53  0.205 30)  → #c71a0c  */
-const PORCELAIN = 0xf3f3f8;
-const INK = 0x0f0e17;
+ *   --vermilion oklch(0.53  0.205 30)  → #c71a0c
+ *
+ * Dark mode swaps the pair. The scene is a WebGL layer, so it cannot inherit
+ * the CSS token flip — without this the shredded records would be drawn dark
+ * on a dark ground and the wordmark would resolve into invisibility. Read
+ * once at mount: the film runs for one scroll and re-theming mid-resolve is
+ * not worth a live listener. */
+const LIGHT = { ground: 0xf3f3f8, ink: 0x0f0e17 };
+/* dark: --porcelain oklch(0.165 0.014 286), --ink oklch(0.945 0.006 286) */
+const DARK = { ground: 0x16151d, ink: 0xeeedf2 };
+
+function palette() {
+  const dark =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+  return dark ? DARK : LIGHT;
+}
 
 /* ------------------------------ fragments ------------------------------ */
 
@@ -420,7 +434,7 @@ export default function Assembly({
       });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
       renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-      renderer.setClearColor(PORCELAIN, 1);
+      renderer.setClearColor(palette().ground, 1);
       host.appendChild(renderer.domElement);
       renderer.domElement.style.cssText =
         "width:100%;height:100%;display:block";
@@ -561,8 +575,8 @@ export default function Assembly({
           uReduced: { value: reduced ? 1 : 0 },
           uWordScale: { value: 0.34 },
           uLoosen: { value: 0 },
-          uPorcelain: { value: new THREE.Color(PORCELAIN) },
-          uInk: { value: new THREE.Color(INK) },
+          uPorcelain: { value: new THREE.Color(palette().ground) },
+          uInk: { value: new THREE.Color(palette().ink) },
           uFogDensity: { value: 0.019 },
           uWordTex: { value: wordTex },
           uWordSize: {
@@ -607,6 +621,20 @@ export default function Assembly({
 
       const onLost = (e: Event) => e.preventDefault();
       renderer.domElement.addEventListener("webglcontextlost", onLost);
+
+      /* ---------- theme ----------
+         The scene is WebGL, so it cannot inherit the CSS token flip. Without
+         this the canvas keeps whichever palette it mounted with, and a machine
+         that switches theme on a schedule (or a viewer toggling it) gets a
+         hard-edged slab of the wrong ground behind the hero. */
+      const schemeMq = window.matchMedia("(prefers-color-scheme: dark)");
+      const onScheme = () => {
+        const p = palette();
+        renderer.setClearColor(p.ground, 1);
+        mat.uniforms.uPorcelain.value = new THREE.Color(p.ground);
+        mat.uniforms.uInk.value = new THREE.Color(p.ink);
+      };
+      schemeMq.addEventListener("change", onScheme);
 
       /* ---------- frame ---------- */
       let raf = 0;
@@ -690,6 +718,7 @@ export default function Assembly({
         io.disconnect();
         ro.disconnect();
         window.removeEventListener("pointermove", onMove);
+        schemeMq.removeEventListener("change", onScheme);
         renderer.domElement.removeEventListener("webglcontextlost", onLost);
         plane.dispose();
         geo.dispose();

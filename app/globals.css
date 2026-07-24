@@ -26,6 +26,30 @@
   --edge: 0.878 0.007 286; /* hairlines */
 }
 
+/*
+ * Dark mode. The tokens are SEMANTIC, not literal — `porcelain` means "the
+ * page's ground" and `ink` means "the high-contrast opposite of the ground",
+ * so the whole system inverts by moving six numbers and every component
+ * follows. A `bg-ink` band stays an inverted band; it simply inverts the
+ * other way.
+ *
+ * Lightnesses are chosen for contrast, not symmetry:
+ *   graphite 0.70 on ground 0.165  — muted type still clears 4.5:1
+ *   vermilion lifted 0.53 -> 0.645 — the light-mode red is too dark to read
+ *     as a signal on a dark ground, AND at 0.645 it can carry dark type on
+ *     the drench, which is the direction that now clears.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --porcelain: 0.165 0.014 286; /* ground */
+    --paper: 0.212 0.016 286; /* raised */
+    --ink: 0.945 0.006 286; /* type + contrast surfaces */
+    --graphite: 0.7 0.014 286; /* muted type — clears 4.5:1 on the ground */
+    --vermilion: 0.645 0.19 30;
+    --edge: 0.305 0.012 286; /* hairlines */
+  }
+}
+
 html {
   /* clips horizontal overflow without becoming a scroll container —
      a scrollport between a fixed stage and the viewport breaks it */

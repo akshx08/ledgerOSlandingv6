@@ -60,13 +60,18 @@ export default function Dock() {
         </Link>
       </div>
 
+      {/* Full-width and centred, NOT `left-1/2 -translate-x-1/2`. A fixed
+          element positioned from the 50% mark gets a shrink-to-fit width
+          capped at the remaining half of the viewport, so on a 375px phone
+          the pill capped at ~188px and silently clipped its last item —
+          Access was unreachable on mobile. */}
       <nav
         aria-label="Primary"
-        className="fixed bottom-4 left-1/2 z-dock -translate-x-1/2 md:bottom-6"
+        className="fixed inset-x-0 bottom-4 z-dock flex justify-center px-3 md:bottom-6"
       >
         <ul
           ref={listRef}
-          className="relative flex items-center rounded-full border border-ink/10 bg-paper/95 p-1 shadow-[0_18px_50px_-18px_oklch(var(--ink)/0.4)] backdrop-blur-[2px]"
+          className="relative flex max-w-full items-center rounded-full border border-ink/10 bg-paper/95 p-1 shadow-[0_18px_50px_-18px_oklch(var(--ink)/0.4)] backdrop-blur-[2px]"
         >
           <span
             ref={plateRef}
@@ -81,7 +86,7 @@ export default function Dock() {
                 <Link
                   href={r.href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[12px] uppercase tracking-[0.1em] transition-colors duration-300 md:px-5 ${
+                  className={`relative flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[10.5px] uppercase tracking-[0.06em] transition-colors duration-300 sm:px-3.5 sm:py-2 sm:text-[12px] sm:tracking-[0.1em] md:px-5 ${
                     active ? "text-porcelain" : "text-graphite hover:text-ink"
                   }`}
                   style={{ fontVariationSettings: '"wdth" 78, "wght" 600' }}

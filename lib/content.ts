@@ -202,12 +202,6 @@ export const COPILOT = {
   ],
 };
 
-export const KNOWLEDGE = {
-  title: "The layer we haven't built yet",
-  body: "A maintained index of Indian tax law — GST rules, TDS rates, ITR forms, ICAI and Income Tax notifications — so the assistant can check an answer against the law as it stands today rather than as a model half-remembers it. It is in development, not shipped. Until it lands, the assistant stays deliberately narrow: your documents, nothing else.",
-  sources: ["GST rules", "TDS rates", "ITR forms", "ICAI notifications", "Income Tax notifications"],
-};
-
 export const ROADMAP = {
   title: "The desk is built. Next we go to where the paper is.",
   body: "An invoice raised inside LedgerOS never has to be read at all — a client raises it in their own portal and it lands in the firm's books already structured, already correct. Paper is the legacy input. The next modules go and meet it where it still arrives: the inbox, and the phone.",
@@ -219,6 +213,7 @@ export const ROADMAP = {
     { n: "05", name: "Clients raise their own invoices", state: "Live" },
     { n: "06", name: "Email reader · WhatsApp assistant", state: "Next" },
     { n: "07", name: "Client dashboards · practice CRM", state: "Planned" },
+    { n: "08", name: "Tax-law knowledge layer for the assistant", state: "Planned" },
   ],
 };
 

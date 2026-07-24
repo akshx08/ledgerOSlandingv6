@@ -23,9 +23,19 @@
  * clears comfortably. Re-measure if the field behind is ever darkened, and
  * note the hero copy exits at `assemble > 0.72`, before the wordmark darkens
  * underneath it; that timing is load-bearing, not incidental.
+ *
+ * DARK MODE inverts the light model rather than reusing it. The white inset
+ * highlights and the brightness lift both assume light is coming from a pale
+ * field; on a dark ground they read as haze on a smudge. Dark instead pulls
+ * the backdrop DOWN (brightness < 1) so the panel sits deeper than the field,
+ * and the catch-light drops to a tenth of its strength — enough to describe
+ * an edge, not enough to look like frost.
  */
 export const GLASS =
-  "bg-transparent " +
-  "backdrop-blur-2xl backdrop-saturate-[1.8] backdrop-brightness-[1.04] " +
-  "border border-white/40 rounded-2xl " +
-  "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_-1px_0_0_rgba(255,255,255,0.18),0_18px_50px_-30px_rgba(15,14,23,0.35)]";
+  "bg-transparent rounded-2xl border " +
+  "backdrop-blur-2xl backdrop-saturate-[1.8] " +
+  // light: lift the backdrop; dark: sink it
+  "backdrop-brightness-[1.04] dark:backdrop-brightness-[0.72] " +
+  "border-white/40 dark:border-white/10 " +
+  "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6),inset_0_-1px_0_0_rgba(255,255,255,0.18),0_18px_50px_-30px_rgba(15,14,23,0.35)] " +
+  "dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),inset_0_-1px_0_0_rgba(255,255,255,0.03),0_18px_50px_-30px_rgba(0,0,0,0.7)]";
