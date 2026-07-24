@@ -21,10 +21,12 @@ const config: Config = {
         mono: ["var(--font-mono)", "monospace"],
       },
       fontSize: {
-        // fluid display steps, ≥1.25 ratio, ceiling under 6rem
-        d1: ["clamp(3.1rem, 11.5vw, 5.9rem)", { lineHeight: "0.87" }],
-        d2: ["clamp(2.3rem, 7.2vw, 4.1rem)", { lineHeight: "0.9" }],
-        d3: ["clamp(1.75rem, 4.4vw, 2.7rem)", { lineHeight: "0.95" }],
+        // Fluid display steps, ≥1.25 ratio, ceiling under 6rem. The floors are
+        // set for a 375px phone: at the old 3.1rem, a three-line d1 headline
+        // plus its lede filled the entire viewport and buried the hero field.
+        d1: ["clamp(2.55rem, 11.5vw, 5.9rem)", { lineHeight: "0.87" }],
+        d2: ["clamp(2rem, 7.2vw, 4.1rem)", { lineHeight: "0.9" }],
+        d3: ["clamp(1.55rem, 4.4vw, 2.7rem)", { lineHeight: "0.95" }],
         lede: ["clamp(1.05rem, 1.7vw, 1.35rem)", { lineHeight: "1.45" }],
       },
       transitionTimingFunction: {

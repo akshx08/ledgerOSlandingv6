@@ -57,7 +57,7 @@ export default function PracticePage() {
             {HOURS.map((h) => (
               <div
                 key={h.t}
-                className="grid gap-4 border-b rule py-10 md:grid-cols-12 md:gap-10 md:py-14"
+                className="grid gap-3 border-b rule py-8 md:grid-cols-12 md:gap-10 md:py-11"
               >
                 <span className="readout text-vermilion md:col-span-2">{h.t}</span>
                 <h2 className="wide-thin text-[clamp(1.5rem,3.2vw,2.3rem)] md:col-span-5">
@@ -72,12 +72,12 @@ export default function PracticePage() {
         </section>
 
         {/* the surfaces, full width */}
-        <section className="bg-porcelain px-5 py-28 md:px-10 md:py-36">
+        <section className="bg-porcelain px-5 py-20 md:px-10 md:py-28">
           <Rise>
             <h2 className="wide max-w-[16ch] text-d2">What it puts in front of them</h2>
           </Rise>
 
-          <div className="mt-16 grid gap-12 md:grid-cols-2 md:gap-16">
+          <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-14">
             <div>
               <Figure kind="inbox" depth={0} />
               <p className="mt-8 max-w-md text-[15px] leading-relaxed text-graphite">
@@ -98,10 +98,10 @@ export default function PracticePage() {
             </div>
           </div>
 
-          <p className="readout mt-14 text-graphite">{INBOX_NOTE}</p>
+          <p className="readout mt-10 text-graphite">{INBOX_NOTE}</p>
         </section>
 
-        <section className="border-t rule bg-porcelain px-5 py-24 md:px-10 md:py-28">
+        <section className="border-t rule bg-porcelain px-5 py-16 md:px-10 md:py-20">
           <Link
             href="/access"
             className="group inline-flex flex-wrap items-baseline gap-x-5 gap-y-2 border-b-2 border-ink pb-3"

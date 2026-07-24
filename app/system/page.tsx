@@ -4,12 +4,12 @@ import Stage from "@/components/Stage";
 import Filmstrip from "@/components/Filmstrip";
 import WeightType from "@/components/Type";
 import Rise from "@/components/Rise";
-import { KNOWLEDGE, ROADMAP } from "@/lib/content";
+import { ROADMAP } from "@/lib/content";
 
 export const metadata: Metadata = {
   title: "System — LedgerOS",
   description:
-    "Intake, extract, classify, match, prep. The five stages a document passes through, what each one refuses to guess at — and why filing stays with the CA.",
+    "It arrives, gets read, finds its client, gets checked, and comes out ready to file. The five steps a document passes through, and what each one refuses to guess at.",
 };
 
 export default function SystemPage() {
@@ -18,7 +18,7 @@ export default function SystemPage() {
       <Stage presence={0.3} />
 
       <main className="relative z-content">
-        <section className="flex min-h-[62svh] items-end px-5 pb-16 pt-36 md:px-10 md:pb-20">
+        <section className="flex min-h-[54svh] items-end px-5 pb-12 pt-28 md:px-10 md:pb-16 md:pt-36">
           <div>
             <p className="readout mb-6 text-vermilion">Five stages · overnight</p>
             <h1 className="wide max-w-[16ch] text-d1">
@@ -32,30 +32,10 @@ export default function SystemPage() {
           <Filmstrip />
         </div>
 
-        {/* the layer we haven't built — stated plainly, not dressed as shipped */}
-        <section className="border-t rule bg-ink px-5 py-28 text-porcelain md:py-36 md:px-10">
-          <div className="grid gap-10 md:grid-cols-12">
-            <div className="md:col-span-6">
-              <span className="readout text-vermilion">In development · not shipped</span>
-              <h2 className="wide-thin mt-5 text-d3">{KNOWLEDGE.title}</h2>
-            </div>
-            <div className="md:col-span-5 md:col-start-8">
-              <p className="text-[15px] leading-relaxed text-porcelain/70 md:text-lede">
-                {KNOWLEDGE.body}
-              </p>
-              <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-3">
-                {KNOWLEDGE.sources.map((s) => (
-                  <li key={s} className="readout text-porcelain/45">
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {/* roadmap as a ledger, not a card rail */}
-        <section className="px-5 py-28 md:px-10 md:py-36">
+        {/* roadmap as a ledger, not a card rail. The unbuilt knowledge layer
+            used to have a whole ink-drenched section to itself; it is one
+            honest line in this list now. */}
+        <section className="border-t rule px-5 py-20 md:px-10 md:py-28">
           <Rise>
             <h2 className="wide max-w-[18ch] text-d2">{ROADMAP.title}</h2>
           </Rise>
@@ -63,7 +43,7 @@ export default function SystemPage() {
             {ROADMAP.body}
           </p>
 
-          <ol className="mt-14 border-t rule">
+          <ol className="mt-10 border-t rule">
             {ROADMAP.items.map((m) => (
               <li
                 key={m.n}
@@ -73,7 +53,7 @@ export default function SystemPage() {
                 <span className="wide-thin text-[clamp(1.4rem,3.4vw,2.4rem)]">{m.name}</span>
                 <span
                   className={`narrow text-[11px] uppercase tracking-[0.12em] ${
-                    m.state === "In pilot" ? "text-vermilion" : "text-graphite"
+                    m.state === "Live" ? "text-vermilion" : "text-graphite"
                   }`}
                 >
                   {m.state}
@@ -84,7 +64,7 @@ export default function SystemPage() {
 
           <Link
             href="/practice"
-            className="group mt-16 inline-flex items-center gap-4 border-b-2 border-ink pb-2"
+            className="group mt-12 inline-flex items-center gap-4 border-b-2 border-ink pb-2"
           >
             <span className="wide-thin text-d3">See it in a practice</span>
             <span className="text-vermilion transition-transform duration-500 ease-expo group-hover:translate-x-2">

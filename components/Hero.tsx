@@ -71,11 +71,15 @@ export default function Hero() {
     // still in the air: the statement must be readable on the shatter's
     // heels, not after a stretch of empty porcelain.
     <section className="relative h-[132vh]">
-      <div className="sticky top-0 flex h-[100svh] flex-col justify-between px-4 pb-12 pt-24 md:px-8 md:pb-14 md:pt-28">
+      {/* On a phone the two plates used to stack to roughly the full 812px of
+          screen, so the field they are supposed to be floating over was never
+          visible and the cue collided with the dock. Mobile gets tighter
+          padding, a smaller lede, and no cue — the dock is already there. */}
+      <div className="sticky top-0 flex h-[100svh] flex-col justify-between px-4 pb-24 pt-20 md:px-8 md:pb-14 md:pt-28">
         {/* ── top-left: the line ── */}
-        <div ref={topRef} className="max-w-[24rem] sm:max-w-[32rem] lg:max-w-[40rem]">
-          <div className={`${GLASS} px-6 py-6 md:px-8 md:py-7`}>
-            <p className="readout mb-5 text-vermilion md:mb-6">
+        <div ref={topRef} className="max-w-[22rem] sm:max-w-[32rem] lg:max-w-[40rem]">
+          <div className={`${GLASS} px-5 py-5 md:px-8 md:py-7`}>
+            <p className="readout mb-4 text-vermilion md:mb-6">
               <Scramble text={OPEN.kicker} delay={80} />
             </p>
             <h1 className="wide text-d1">
@@ -97,14 +101,14 @@ export default function Hero() {
           ref={botRef}
           className="mt-auto grid gap-4 md:grid-cols-12 md:items-end md:gap-6"
         >
-          <div className={`${GLASS} px-6 py-6 md:col-span-6 md:px-7 md:py-7`}>
-            <p className="human-body text-[15px] text-graphite md:text-[16.5px]">
+          <div className={`${GLASS} px-5 py-5 md:col-span-6 md:px-7 md:py-7`}>
+            <p className="human-body text-[13.5px] leading-[1.45] text-graphite md:text-[16.5px] md:leading-[1.52]">
               {OPEN.under}
             </p>
-            <div className="mt-6 flex items-center gap-6">
+            <div className="mt-5 flex items-center gap-6 md:mt-6">
               <Link
                 href="/access"
-                className="group relative overflow-hidden bg-ink px-8 py-4 text-porcelain"
+                className="group relative overflow-hidden bg-ink px-6 py-3.5 text-porcelain md:px-8 md:py-4"
               >
                 <span className="narrow relative z-10 text-[13px] uppercase tracking-[0.12em]">
                   Request access
@@ -115,7 +119,9 @@ export default function Hero() {
             </div>
           </div>
 
-          <div className="md:col-span-4 md:col-start-9 md:justify-self-end">
+          {/* hidden on phones: it sat directly under the dock and read as a
+              second, broken nav bar */}
+          <div className="hidden md:col-span-4 md:col-start-9 md:block md:justify-self-end">
             <p className={`${GLASS} readout px-4 py-3 text-graphite`}>
               {OPEN.cue} ↓
             </p>
